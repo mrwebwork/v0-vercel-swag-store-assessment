@@ -1,59 +1,34 @@
-import { fetchProducts } from '@/lib/api'
-import { formatPrice, getFirstImage } from '@/lib/utils'
-import Image from 'next/image'
-import Link from 'next/link'
+import { Suspense } from 'react'
+import HeroSection from '@/components/hero-section'
+import PromoBanner from '@/components/promo-banner'
+import PromoBannerSkeleton from '@/components/promo-banner-skeleton'
+import FeaturedProducts from '@/components/featured-products'
+import FeaturedProductsSkeleton from '@/components/featured-products-skeleton'
 
-export default async function Home() {
-  const { products } = await fetchProducts({ featured: true, limit: 8 })
+export const metadata = {
+  title: 'Home',
+  description: 'Shop the official Vercel Swag Store for premium developer apparel and accessories.',
+  openGraph: {
+    title: 'Vercel Swag Store',
+    description: 'Official Vercel merchandise - premium developer swag',
+  },
+}
 
+export default function HomePage() {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      <section className="mb-12">
-        <h1 className="mb-2 text-3xl font-bold tracking-tight sm:text-4xl">
-          Welcome to the Vercel Swag Store
-        </h1>
-        <p className="max-w-2xl text-lg text-zinc-400">
-          Official Vercel merchandise. Quality apparel and accessories for
-          developers.
-        </p>
+    <main>
+      <HeroSection />
+      <Suspense fallback={<PromoBannerSkeleton />}>
+        <PromoBanner />
+      </Suspense>
+      <section className="container mx-auto px-4 py-12 md:py-16">
+        <h2 className="mb-8 text-2xl font-bold text-white md:text-3xl">
+          Featured Products
+        </h2>
+        <Suspense fallback={<FeaturedProductsSkeleton />}>
+          <FeaturedProducts />
+        </Suspense>
       </section>
-
-      <section>
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Featured Products</h2>
-          <Link
-            href="/search"
-            className="text-sm font-medium text-zinc-400 transition-colors hover:text-white"
-          >
-            View all
-          </Link>
-        </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {products.map((product) => (
-            <Link
-              key={product.id}
-              href={`/products/${product.slug}`}
-              className="group rounded-lg border border-zinc-800 bg-zinc-900 p-4 transition-colors hover:border-zinc-700 hover:bg-zinc-800/50"
-            >
-              <div className="relative mb-4 aspect-square overflow-hidden rounded-md bg-zinc-800">
-                <Image
-                  src={getFirstImage(product.images)}
-                  alt={product.name}
-                  fill
-                  className="object-cover transition-transform group-hover:scale-105"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                />
-              </div>
-              <h3 className="mb-1 font-medium leading-tight text-white group-hover:text-zinc-200">
-                {product.name}
-              </h3>
-              <p className="text-sm text-zinc-400">
-                {formatPrice(product.price, product.currency)}
-              </p>
-            </Link>
-          ))}
-        </div>
-      </section>
-    </div>
+    </main>
   )
 }
