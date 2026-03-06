@@ -1,5 +1,3 @@
-'use client'
-
 import Link from 'next/link'
 
 function VercelLogo({ className }: { className?: string }) {
@@ -22,7 +20,7 @@ const footerLinks = [
 ]
 
 export function Footer() {
-  const currentYear = new Date().getFullYear()
+  const currentYear = 2025
 
   return (
     <footer className="border-t border-zinc-800 bg-black">
