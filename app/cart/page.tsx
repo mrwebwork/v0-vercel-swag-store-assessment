@@ -3,7 +3,11 @@ import { CartContent } from '@/components/cart-content'
 
 export const metadata: Metadata = {
   title: 'Cart',
-  description: 'View your shopping cart',
+  description: 'View and manage your shopping cart at Vercel Swag Store.',
+  openGraph: {
+    title: 'Your Cart | Vercel Swag Store',
+    description: 'Review your items and proceed to checkout.',
+  },
 }
 
 export default function CartPage() {

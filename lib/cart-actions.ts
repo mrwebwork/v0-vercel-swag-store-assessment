@@ -29,10 +29,13 @@ export async function getCartAction(): Promise<Cart | null> {
   try {
     const token = await getOrCreateCartToken()
     return await getCart(token)
-  } catch {
+  } catch (error: unknown) {
     // Token expired or invalid — clear cookie and return empty cart
-    const cookieStore = await cookies()
-    cookieStore.delete(CART_TOKEN_COOKIE)
+    const err = error as { status?: number; message?: string }
+    if (err?.status === 404 || err?.status === 401 || err?.message?.includes('expired')) {
+      const cookieStore = await cookies()
+      cookieStore.delete(CART_TOKEN_COOKIE)
+    }
     return null
   }
 }
