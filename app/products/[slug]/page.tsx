@@ -14,9 +14,6 @@ interface ProductPageProps {
   params: Promise<{ slug: string }>
 }
 
-// Allow unknown slugs to be rendered on-demand (ISR for new products)
-export const dynamicParams = true
-
 // Static product data is cached with 'use cache'
 // Returns null for unknown slugs instead of throwing
 async function getProduct(slug: string) {
