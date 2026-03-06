@@ -23,10 +23,15 @@ async function getProduct(slug: string) {
 }
 
 export async function generateStaticParams() {
-  const { products } = await fetchProducts({ limit: 100 })
-  return products.map((product) => ({
-    slug: product.slug,
-  }))
+  try {
+    const data = await fetchProducts({ limit: 100 })
+    const products = Array.isArray(data) ? data : (data?.products ?? [])
+    return products.map((product) => ({
+      slug: product.slug,
+    }))
+  } catch {
+    return []
+  }
 }
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {

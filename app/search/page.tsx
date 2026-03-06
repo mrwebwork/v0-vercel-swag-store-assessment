@@ -26,15 +26,19 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   let products: Product[] = []
   let isSearching = false
 
-  if (q && q.length >= 3) {
-    // Server-side search with URL-persistent state - max 5 results
-    isSearching = true
-    const result = await fetchProducts({ search: q, category, limit: 5 })
-    products = result.products ?? []
-  } else if (!q) {
-    // Default state: show all products (first page)
-    const result = await fetchProducts({ category, limit: 20 })
-    products = result.products ?? []
+  try {
+    if (q && q.length >= 3) {
+      // Server-side search with URL-persistent state - max 5 results
+      isSearching = true
+      const result = await fetchProducts({ search: q, category, limit: 5 })
+      products = Array.isArray(result) ? result : (result?.products ?? [])
+    } else if (!q) {
+      // Default state: show all products (first page)
+      const result = await fetchProducts({ category, limit: 20 })
+      products = Array.isArray(result) ? result : (result?.products ?? [])
+    }
+  } catch {
+    // Keep products as empty array on error
   }
 
   return (

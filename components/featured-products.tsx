@@ -7,7 +7,14 @@ export default async function FeaturedProducts() {
   cacheLife('hours')
   cacheTag('products', 'featured-products')
 
-  const { products } = await fetchProducts({ featured: true, limit: 12 })
+  let products: Awaited<ReturnType<typeof fetchProducts>>['products'] = []
+  
+  try {
+    const data = await fetchProducts({ featured: true, limit: 12 })
+    products = Array.isArray(data) ? data : (data?.products ?? [])
+  } catch {
+    // Return empty state on error
+  }
 
   if (!products || products.length === 0) {
     return (
