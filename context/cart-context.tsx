@@ -106,11 +106,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
         try {
           const updatedCart = await addToCartAction(productId, quantity)
           setCart(updatedCart)
-        } catch (error) {
+        } catch {
           // Revert optimistic update by refetching
-          const serverCart = await getCartAction()
-          setCart(serverCart)
-          throw error
+          try {
+            const serverCart = await getCartAction()
+            setCart(serverCart)
+          } catch {
+            // If refetch also fails, keep current state
+          }
         }
       })
     },
@@ -124,11 +127,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
         try {
           const updatedCart = await updateCartItemAction(itemId, quantity)
           setCart(updatedCart)
-        } catch (error) {
+        } catch {
           // Revert optimistic update by refetching
-          const serverCart = await getCartAction()
-          setCart(serverCart)
-          throw error
+          try {
+            const serverCart = await getCartAction()
+            setCart(serverCart)
+          } catch {
+            // If refetch also fails, keep current state
+          }
         }
       })
     },
@@ -142,11 +148,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
         try {
           const updatedCart = await removeCartItemAction(itemId)
           setCart(updatedCart)
-        } catch (error) {
+        } catch {
           // Revert optimistic update by refetching
-          const serverCart = await getCartAction()
-          setCart(serverCart)
-          throw error
+          try {
+            const serverCart = await getCartAction()
+            setCart(serverCart)
+          } catch {
+            // If refetch also fails, reset to null
+            setCart(null)
+          }
         }
       })
     },

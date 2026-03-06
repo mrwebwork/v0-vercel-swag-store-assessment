@@ -1,26 +1,31 @@
 import { cacheLife, cacheTag } from 'next/cache'
 import { fetchProducts } from '@/lib/api'
 import type { Product } from '@/types'
-import ProductCard from '@/components/product-card'
+import ProductGrid from '@/components/product-grid'
 
-export default async function FeaturedProducts() {
+// Cached data fetching function
+async function getFeaturedProducts(): Promise<Product[]> {
   'use cache'
   cacheLife('hours')
   cacheTag('products', 'featured-products')
 
-  let products: Product[] = []
-  
   try {
     const data = await fetchProducts({ featured: true, limit: 12 })
-    products = data?.products ?? []
+    let products = data?.products ?? []
     // If featured filter returned no results, fall back to all products
     if (products.length === 0) {
       const fallback = await fetchProducts({ limit: 8 })
       products = fallback?.products ?? []
     }
+    return products
   } catch {
-    // Return empty state on error
+    return []
   }
+}
+
+// Server component that renders the grid (not cached itself)
+export default async function FeaturedProducts() {
+  const products = await getFeaturedProducts()
 
   if (!products || products.length === 0) {
     return (
@@ -30,11 +35,5 @@ export default async function FeaturedProducts() {
     )
   }
 
-  return (
-    <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
-      {products.slice(0, 12).map((product) => (
-        <ProductCard key={product.id} product={product} />
-      ))}
-    </div>
-  )
+  return <ProductGrid products={products.slice(0, 12)} />
 }

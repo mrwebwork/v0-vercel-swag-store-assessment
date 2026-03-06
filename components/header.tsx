@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { ShoppingCart, Menu, X } from 'lucide-react'
 import { useCart } from '@/context/cart-context'
 import { Button } from '@/components/ui/button'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
 
 function VercelLogo({ className }: { className?: string }) {
   return (
@@ -94,6 +94,7 @@ export function Header() {
               side="right"
               className="w-full max-w-xs border-zinc-800 bg-zinc-950"
             >
+              <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
               <div className="flex h-full flex-col">
                 <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
                   <Link
