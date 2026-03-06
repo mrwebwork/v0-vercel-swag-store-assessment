@@ -22,6 +22,7 @@ export type Stock = {
 export type Promotion = {
   id: string
   title: string
+  description?: string
   discountPercent: number
   code: string
   validFrom: string
@@ -56,14 +57,22 @@ export type Cart = {
 
 export type StoreConfig = {
   storeName: string
-  defaultTitle: string
-  titleTemplate: string
-  description: string
+  currency: string
   features: {
     wishlist: boolean
     productComparison: boolean
     reviews: boolean
     liveChat: boolean
     recentlyViewed: boolean
+  }
+  socialLinks: {
+    twitter: string
+    github: string
+    discord: string
+  }
+  seo: {
+    defaultTitle: string
+    titleTemplate: string
+    defaultDescription: string
   }
 }
