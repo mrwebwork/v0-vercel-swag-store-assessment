@@ -11,14 +11,17 @@ export default async function PromoBanner() {
     return null
   }
 
-  const validFrom = new Date(promotion.validFrom).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  })
-  const validUntil = new Date(promotion.validUntil).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  })
+  // Safely format dates - only show if valid
+  function formatDate(dateStr: string | undefined | null): string | null {
+    if (!dateStr) return null
+    const d = new Date(dateStr)
+    if (isNaN(d.getTime())) return null
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
+
+  const startDate = formatDate(promotion.validFrom)
+  const endDate = formatDate(promotion.validUntil)
+  const hasDateRange = startDate && endDate
 
   return (
     <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 py-3">
@@ -36,9 +39,11 @@ export default async function PromoBanner() {
             <span className="rounded-md bg-black/20 px-3 py-1 font-mono text-sm font-semibold text-white">
               {promotion.code}
             </span>
-            <span className="text-xs text-white/80 sm:text-sm">
-              Valid {validFrom} - {validUntil}
-            </span>
+            {hasDateRange && (
+              <span className="text-xs text-white/80 sm:text-sm">
+                Valid {startDate} - {endDate}
+              </span>
+            )}
           </div>
         </div>
       </div>

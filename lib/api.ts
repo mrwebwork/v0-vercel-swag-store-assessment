@@ -55,7 +55,19 @@ export async function fetchProducts(params?: FetchProductsParams): Promise<Produ
     throw new Error(`Failed to fetch products: ${response.statusText}`)
   }
 
-  return response.json()
+  const json = await response.json()
+
+  // API wraps responses in { success, data, meta }
+  const products: Product[] = json?.data ?? json?.products ?? (Array.isArray(json) ? json : [])
+  const pagination = json?.meta?.pagination
+
+  return {
+    products,
+    total: pagination?.total ?? products.length,
+    page: pagination?.page ?? 1,
+    limit: pagination?.limit ?? products.length,
+    totalPages: pagination?.totalPages ?? 1,
+  }
 }
 
 export async function fetchProduct(idOrSlug: string): Promise<Product | null> {
@@ -70,7 +82,8 @@ export async function fetchProduct(idOrSlug: string): Promise<Product | null> {
     throw new Error(`Failed to fetch product: ${response.statusText}`)
   }
 
-  return response.json()
+  const json = await response.json()
+  return json?.data ?? json
 }
 
 export async function fetchProductStock(idOrSlug: string): Promise<Stock> {
@@ -83,7 +96,8 @@ export async function fetchProductStock(idOrSlug: string): Promise<Stock> {
     throw new Error(`Failed to fetch product stock: ${response.statusText}`)
   }
 
-  return response.json()
+  const json = await response.json()
+  return json?.data ?? json
 }
 
 export async function fetchPromotion(): Promise<Promotion | null> {
@@ -99,7 +113,8 @@ export async function fetchPromotion(): Promise<Promotion | null> {
     throw new Error(`Failed to fetch promotion: ${response.statusText}`)
   }
 
-  return response.json()
+  const json = await response.json()
+  return json?.data ?? json
 }
 
 export async function fetchCategories(): Promise<Category[]> {
@@ -111,7 +126,8 @@ export async function fetchCategories(): Promise<Category[]> {
     throw new Error(`Failed to fetch categories: ${response.statusText}`)
   }
 
-  return response.json()
+  const json = await response.json()
+  return json?.data ?? json
 }
 
 export async function fetchStoreConfig(): Promise<StoreConfig> {
@@ -123,7 +139,8 @@ export async function fetchStoreConfig(): Promise<StoreConfig> {
     throw new Error(`Failed to fetch store config: ${response.statusText}`)
   }
 
-  return response.json()
+  const json = await response.json()
+  return json?.data ?? json
 }
 
 export async function createCart(): Promise<{ token: string }> {

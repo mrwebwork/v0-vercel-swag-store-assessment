@@ -1,5 +1,6 @@
 import { cacheLife, cacheTag } from 'next/cache'
 import { fetchProducts } from '@/lib/api'
+import type { Product } from '@/types'
 import ProductCard from '@/components/product-card'
 
 export default async function FeaturedProducts() {
@@ -7,11 +8,16 @@ export default async function FeaturedProducts() {
   cacheLife('hours')
   cacheTag('products', 'featured-products')
 
-  let products: Awaited<ReturnType<typeof fetchProducts>>['products'] = []
+  let products: Product[] = []
   
   try {
     const data = await fetchProducts({ featured: true, limit: 12 })
-    products = Array.isArray(data) ? data : (data?.products ?? [])
+    products = data?.products ?? []
+    // If featured filter returned no results, fall back to all products
+    if (products.length === 0) {
+      const fallback = await fetchProducts({ limit: 8 })
+      products = fallback?.products ?? []
+    }
   } catch {
     // Return empty state on error
   }

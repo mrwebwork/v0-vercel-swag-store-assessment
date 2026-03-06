@@ -33,7 +33,7 @@ async function getProduct(slug: string) {
 export async function generateStaticParams() {
   try {
     const data = await fetchProducts({ limit: 100 })
-    const products = Array.isArray(data) ? data : (data?.products ?? [])
+    const products = data?.products ?? []
     return products.map((product) => ({
       slug: product.slug,
     }))
