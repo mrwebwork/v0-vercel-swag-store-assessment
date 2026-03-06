@@ -1,4 +1,4 @@
-import { unstable_noStore as noStore } from 'next/cache'
+import { connection } from 'next/server'
 import { fetchProductStock } from '@/lib/api'
 
 interface StockIndicatorProps {
@@ -6,7 +6,7 @@ interface StockIndicatorProps {
 }
 
 export async function StockIndicator({ productId }: StockIndicatorProps) {
-  noStore()
+  await connection()
   
   const stock = await fetchProductStock(productId)
 

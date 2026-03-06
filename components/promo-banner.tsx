@@ -1,9 +1,9 @@
-import { unstable_noStore as noStore } from 'next/cache'
+import { connection } from 'next/server'
 import { fetchPromotion } from '@/lib/api'
 
 export default async function PromoBanner() {
   // This must never be cached - the API returns a random promo each time
-  noStore()
+  await connection()
 
   const promotion = await fetchPromotion()
 

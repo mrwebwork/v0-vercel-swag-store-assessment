@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
+import { cacheLife, cacheTag } from 'next/cache'
 import { fetchProduct, fetchProducts } from '@/lib/api'
 import { formatPrice, getFirstImage } from '@/lib/utils'
 import { StockIndicator } from '@/components/stock-indicator'
@@ -16,7 +17,6 @@ interface ProductPageProps {
 // Static product data is cached with 'use cache'
 async function getProduct(slug: string) {
   'use cache'
-  const { cacheLife, cacheTag } = await import('next/cache')
   cacheLife('hours')
   cacheTag('products', `product-${slug}`)
   return fetchProduct(slug)
