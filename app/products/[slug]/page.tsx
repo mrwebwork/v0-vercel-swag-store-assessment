@@ -26,11 +26,17 @@ export async function generateStaticParams() {
   try {
     const data = await fetchProducts({ limit: 100 })
     const products = Array.isArray(data) ? data : (data?.products ?? [])
+    if (products.length === 0) {
+      // Return a placeholder that won't match real routes
+      // This prevents EmptyGenerateStaticParamsError with cacheComponents
+      return [{ slug: '__placeholder__' }]
+    }
     return products.map((product) => ({
       slug: product.slug,
     }))
   } catch {
-    return []
+    // Return a placeholder to prevent EmptyGenerateStaticParamsError
+    return [{ slug: '__placeholder__' }]
   }
 }
 
