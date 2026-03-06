@@ -1,16 +1,17 @@
-import { getProductBySlug, getProducts } from '@/lib/api'
+import { fetchProduct, fetchProducts } from '@/lib/api'
 import { formatPrice, getFirstImage } from '@/lib/utils'
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { AddToCartButton } from '@/components/add-to-cart-button'
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>
 }
 
 export async function generateStaticParams() {
-  const products = await getProducts()
+  const { products } = await fetchProducts({ limit: 100 })
   return products.map((product) => ({
     slug: product.slug,
   }))
@@ -20,122 +21,121 @@ export async function generateMetadata({
   params,
 }: ProductPageProps): Promise<Metadata> {
   const { slug } = await params
-  const product = await getProductBySlug(slug)
-
-  if (!product) {
+  
+  try {
+    const product = await fetchProduct(slug)
     return {
-      title: 'Product Not Found | Vercel Swag Store',
+      title: product.name,
+      description: product.description,
+      openGraph: {
+        title: product.name,
+        description: product.description,
+        images: product.images[0] ? [{ url: product.images[0] }] : undefined,
+      },
     }
-  }
-
-  return {
-    title: `${product.name} | Vercel Swag Store`,
-    description: product.description,
+  } catch {
+    return {
+      title: 'Product Not Found',
+    }
   }
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params
-  const product = await getProductBySlug(slug)
-
-  if (!product) {
+  
+  let product
+  try {
+    product = await fetchProduct(slug)
+  } catch {
     notFound()
   }
 
   return (
-    <div className="min-h-screen bg-background font-sans">
-      <header className="border-b border-border/40">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <Link href="/" className="text-xl font-bold tracking-tight">
-            Vercel Swag Store
-          </Link>
-          <nav className="flex items-center gap-6">
-            <Link
-              href="/products"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              All Products
+    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      {/* Breadcrumb */}
+      <nav className="mb-8" aria-label="Breadcrumb">
+        <ol className="flex items-center gap-2 text-sm text-zinc-400">
+          <li>
+            <Link href="/" className="transition-colors hover:text-white">
+              Home
             </Link>
-          </nav>
+          </li>
+          <li aria-hidden="true">/</li>
+          <li>
+            <Link href="/search" className="transition-colors hover:text-white">
+              Shop
+            </Link>
+          </li>
+          <li aria-hidden="true">/</li>
+          <li className="text-white" aria-current="page">
+            {product.name}
+          </li>
+        </ol>
+      </nav>
+
+      <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
+        {/* Product Image */}
+        <div className="relative aspect-square overflow-hidden rounded-lg bg-zinc-800">
+          <Image
+            src={getFirstImage(product.images)}
+            alt={product.name}
+            fill
+            className="object-cover"
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            priority
+          />
         </div>
-      </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <nav className="mb-8">
-          <ol className="flex items-center gap-2 text-sm text-muted-foreground">
-            <li>
-              <Link href="/" className="hover:text-foreground">
-                Home
-              </Link>
-            </li>
-            <li>/</li>
-            <li>
-              <Link href="/products" className="hover:text-foreground">
-                Products
-              </Link>
-            </li>
-            <li>/</li>
-            <li className="text-foreground">{product.name}</li>
-          </ol>
-        </nav>
+        {/* Product Details */}
+        <div className="flex flex-col">
+          <h1 className="mb-4 text-3xl font-bold tracking-tight">
+            {product.name}
+          </h1>
 
-        <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
-          <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
-            <Image
-              src={getFirstImage(product.images)}
-              alt={product.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              priority
-            />
-          </div>
-
-          <div className="flex flex-col">
-            <h1 className="mb-4 text-3xl font-bold tracking-tight">
-              {product.name}
-            </h1>
-
-            <p className="mb-6 text-2xl font-semibold">
-              {formatPrice(product.price, product.currency)}
-            </p>
-
-            <p className="mb-8 leading-relaxed text-muted-foreground">
-              {product.description}
-            </p>
-
-            {product.variants && product.variants.length > 0 && (
-              <div className="mb-8">
-                <h3 className="mb-3 text-sm font-medium">Available Options</h3>
-                <div className="flex flex-wrap gap-2">
-                  {product.variants.map((variant) => (
-                    <span
-                      key={variant.id}
-                      className="rounded-md border border-border bg-muted px-3 py-1.5 text-sm"
-                    >
-                      {variant.name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="mt-auto">
-              <p className="text-sm text-muted-foreground">
-                Category: {product.category}
-              </p>
-            </div>
-          </div>
-        </div>
-      </main>
-
-      <footer className="mt-auto border-t border-border/40">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <p className="text-center text-sm text-muted-foreground">
-            Vercel Swag Store Assessment
+          <p className="mb-6 text-2xl font-semibold">
+            {formatPrice(product.price, product.currency)}
           </p>
+
+          <p className="mb-8 leading-relaxed text-zinc-400">
+            {product.description}
+          </p>
+
+          {/* Add to Cart */}
+          <div className="mb-8">
+            <AddToCartButton productId={product.id} productName={product.name} />
+          </div>
+
+          {/* Tags */}
+          {product.tags && product.tags.length > 0 && (
+            <div className="mb-6">
+              <h3 className="mb-3 text-sm font-medium text-zinc-400">Tags</h3>
+              <div className="flex flex-wrap gap-2">
+                {product.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full bg-zinc-800 px-3 py-1 text-sm text-zinc-300"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Category */}
+          <div className="mt-auto border-t border-zinc-800 pt-6">
+            <p className="text-sm text-zinc-500">
+              Category:{' '}
+              <Link
+                href={`/search?category=${product.category}`}
+                className="text-zinc-400 transition-colors hover:text-white"
+              >
+                {product.category}
+              </Link>
+            </p>
+          </div>
         </div>
-      </footer>
+      </div>
     </div>
   )
 }
