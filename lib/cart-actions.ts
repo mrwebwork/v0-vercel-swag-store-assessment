@@ -2,7 +2,7 @@
 
 import 'server-only'
 import { cookies } from 'next/headers'
-import { createCart, addToCart, updateCartItem, removeCartItem, getCart } from './api'
+import { createCart, addToCart, updateCartItem, removeCartItem, getCart, fetchProductStock } from './api'
 import type { Cart } from '@/types'
 
 const CART_TOKEN_COOKIE = 'cart-token'
@@ -68,4 +68,8 @@ export async function removeCartItemAction(itemId: string): Promise<Cart> {
   }
   
   return await removeCartItem(token, itemId)
+}
+
+export async function getStockAction(productId: string) {
+  return fetchProductStock(productId)
 }
