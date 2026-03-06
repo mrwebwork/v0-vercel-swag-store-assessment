@@ -7,9 +7,12 @@ import type { Product } from '@/types'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Search',
-  description: 'Search the Vercel Swag Store',
-  openGraph: { title: 'Search | Vercel Swag Store' },
+  title: 'Shop All Products',
+  description: 'Browse and search the full Vercel Swag Store collection. Filter by category, find your favorite merch.',
+  openGraph: {
+    title: 'Shop All Products | Vercel Swag Store',
+    description: 'Browse and search the full Vercel Swag Store collection.',
+  },
 }
 
 interface SearchPageProps {
@@ -20,7 +23,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const { q, category } = await searchParams
 
   // Fetch categories (cached - static data)
-  const categories = await fetchCategories()
+  let categories: Awaited<ReturnType<typeof fetchCategories>> = []
+  try {
+    categories = await fetchCategories()
+    if (!Array.isArray(categories)) categories = []
+  } catch {
+    categories = []
+  }
 
   // Fetch products based on search state
   let products: Product[] = []
@@ -42,7 +51,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   }
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <h1 className="mb-2 text-3xl font-bold tracking-tight text-white">
         Shop All Products
       </h1>
@@ -90,7 +99,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           ))}
         </div>
       )}
-    </main>
+    </div>
   )
 }
 

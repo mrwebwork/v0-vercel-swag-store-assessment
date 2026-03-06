@@ -1,6 +1,6 @@
 export default function ProductLoading() {
   return (
-    <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       {/* Breadcrumb Skeleton */}
       <nav className="mb-8" aria-label="Loading breadcrumb">
         <div className="flex items-center gap-2">
@@ -52,6 +52,6 @@ export default function ProductLoading() {
           </div>
         </div>
       </div>
-    </main>
+    </div>
   )
 }

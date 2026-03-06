@@ -1,6 +1,6 @@
 export default function SearchLoading() {
   return (
-    <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       {/* Header Skeleton */}
       <div className="mb-2 h-9 w-64 animate-pulse rounded-lg bg-zinc-800" />
       <div className="mb-8 h-5 w-80 animate-pulse rounded-lg bg-zinc-800" />
@@ -27,9 +27,12 @@ export default function SearchLoading() {
               <div className="mb-2 h-5 w-full animate-pulse rounded bg-zinc-800" />
               <div className="h-6 w-20 animate-pulse rounded bg-zinc-800" />
             </div>
+            <div className="px-4 pb-4">
+              <div className="h-9 w-full animate-pulse rounded-md bg-zinc-800" />
+            </div>
           </div>
         ))}
       </div>
-    </main>
+    </div>
   )
 }

@@ -16,12 +16,12 @@ export const metadata = {
 
 export default function HomePage() {
   return (
-    <main>
+    <>
       <HeroSection />
       <Suspense fallback={<PromoBannerSkeleton />}>
         <PromoBanner />
       </Suspense>
-      <section className="container mx-auto px-4 py-12 md:py-16">
+      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 md:py-16 lg:px-8">
         <h2 className="mb-8 text-2xl font-bold text-white md:text-3xl">
           Featured Products
         </h2>
@@ -29,6 +29,6 @@ export default function HomePage() {
           <FeaturedProducts />
         </Suspense>
       </section>
-    </main>
+    </>
   )
 }

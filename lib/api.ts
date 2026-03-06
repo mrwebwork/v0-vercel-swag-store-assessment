@@ -1,6 +1,6 @@
 import 'server-only'
 
-import type { Product, Stock, Promotion, Category, Cart, StoreConfig } from '@/types'
+import type { Product, Stock, Promotion, Category, Cart, CartItem, StoreConfig } from '@/types'
 
 const API_BASE_URL = process.env.API_BASE_URL ?? 'https://vercel-swag-store-api.vercel.app/api'
 const API_BYPASS_TOKEN = process.env.API_BYPASS_TOKEN ?? 'OykROcuULI6YJwAwk3VnWv4gMMbpAq6q'
@@ -11,6 +11,8 @@ function getHeaders(): HeadersInit {
     'x-vercel-protection-bypass': API_BYPASS_TOKEN ?? '',
   }
 }
+
+// ─── Products ───────────────────────────────────────────────
 
 type FetchProductsParams = {
   featured?: boolean
@@ -30,7 +32,7 @@ type ProductsResponse = {
 
 export async function fetchProducts(params?: FetchProductsParams): Promise<ProductsResponse> {
   const url = new URL(`${API_BASE_URL}/products`)
-  
+
   if (params?.featured !== undefined) {
     url.searchParams.set('featured', String(params.featured))
   }
@@ -100,6 +102,8 @@ export async function fetchProductStock(idOrSlug: string): Promise<Stock> {
   return json?.data ?? json
 }
 
+// ─── Promotions ─────────────────────────────────────────────
+
 export async function fetchPromotion(): Promise<Promotion | null> {
   const response = await fetch(`${API_BASE_URL}/promotions`, {
     headers: getHeaders(),
@@ -117,6 +121,8 @@ export async function fetchPromotion(): Promise<Promotion | null> {
   return json?.data ?? json
 }
 
+// ─── Categories ─────────────────────────────────────────────
+
 export async function fetchCategories(): Promise<Category[]> {
   const response = await fetch(`${API_BASE_URL}/categories`, {
     headers: getHeaders(),
@@ -129,6 +135,8 @@ export async function fetchCategories(): Promise<Category[]> {
   const json = await response.json()
   return json?.data ?? json
 }
+
+// ─── Store Config ───────────────────────────────────────────
 
 export async function fetchStoreConfig(): Promise<StoreConfig> {
   const response = await fetch(`${API_BASE_URL}/store/config`, {
@@ -143,6 +151,38 @@ export async function fetchStoreConfig(): Promise<StoreConfig> {
   return json?.data ?? json
 }
 
+// ─── Cart ───────────────────────────────────────────────────
+
+/**
+ * Normalize the API cart response into our Cart type.
+ * The API returns items as { productId, quantity, product: {...}, lineTotal }
+ * We flatten this into our CartItem shape: { id, productId, name, image, price, quantity }
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function normalizeCart(raw: any): Cart {
+  const items: CartItem[] = (raw.items ?? []).map((item: Record<string, unknown>) => {
+    const product = item.product as Record<string, unknown> | undefined
+    return {
+      id: (item.productId as string) ?? '',
+      productId: (item.productId as string) ?? '',
+      name: (product?.name as string) ?? 'Unknown Product',
+      image: ((product?.images as string[]) ?? [])[0] ?? '/placeholder.svg',
+      price: (product?.price as number) ?? 0,
+      quantity: (item.quantity as number) ?? 1,
+    }
+  })
+
+  return {
+    token: raw.token ?? '',
+    items,
+    totalItems: raw.totalItems ?? items.reduce((sum: number, i: CartItem) => sum + i.quantity, 0),
+    subtotal: raw.subtotal ?? items.reduce((sum: number, i: CartItem) => sum + i.price * i.quantity, 0),
+    currency: raw.currency ?? 'USD',
+    createdAt: raw.createdAt ?? '',
+    updatedAt: raw.updatedAt ?? '',
+  }
+}
+
 export async function createCart(): Promise<{ token: string }> {
   const response = await fetch(`${API_BASE_URL}/cart/create`, {
     method: 'POST',
@@ -154,8 +194,12 @@ export async function createCart(): Promise<{ token: string }> {
   }
 
   const token = response.headers.get('x-cart-token')
-  
+
   if (!token) {
+    // Fallback: try reading token from response body
+    const json = await response.json()
+    const bodyToken = json?.data?.token ?? json?.token
+    if (bodyToken) return { token: bodyToken }
     throw new Error('No cart token received from server')
   }
 
@@ -174,7 +218,8 @@ export async function getCart(cartToken: string): Promise<Cart> {
     throw new Error(`Failed to get cart: ${response.statusText}`)
   }
 
-  return response.json()
+  const json = await response.json()
+  return normalizeCart(json?.data ?? json)
 }
 
 export async function addToCart(
@@ -195,7 +240,8 @@ export async function addToCart(
     throw new Error(`Failed to add to cart: ${response.statusText}`)
   }
 
-  return response.json()
+  const json = await response.json()
+  return normalizeCart(json?.data ?? json)
 }
 
 export async function updateCartItem(
@@ -216,7 +262,8 @@ export async function updateCartItem(
     throw new Error(`Failed to update cart item: ${response.statusText}`)
   }
 
-  return response.json()
+  const json = await response.json()
+  return normalizeCart(json?.data ?? json)
 }
 
 export async function removeCartItem(cartToken: string, itemId: string): Promise<Cart> {
@@ -232,5 +279,6 @@ export async function removeCartItem(cartToken: string, itemId: string): Promise
     throw new Error(`Failed to remove cart item: ${response.statusText}`)
   }
 
-  return response.json()
+  const json = await response.json()
+  return normalizeCart(json?.data ?? json)
 }

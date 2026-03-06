@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <main className="flex min-h-[60vh] flex-col items-center justify-center px-4 py-16">
+    <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 py-16">
       {/* Vercel-style 404 */}
       <div className="flex items-center gap-4">
         <span className="text-2xl font-semibold text-white">404</span>
@@ -22,6 +22,6 @@ export default function NotFound() {
       >
         Go back home
       </Link>
-    </main>
+    </div>
   )
 }

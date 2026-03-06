@@ -70,7 +70,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   }
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       {/* Breadcrumb */}
       <nav className="mb-8" aria-label="Breadcrumb">
         <ol className="flex items-center gap-2 text-sm text-zinc-400">
@@ -164,6 +164,6 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
           </div>
         </div>
       </div>
-    </main>
+    </div>
   )
 }

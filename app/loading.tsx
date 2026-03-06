@@ -1,6 +1,6 @@
 export default function HomeLoading() {
   return (
-    <main>
+    <>
       {/* Hero Skeleton */}
       <div className="relative overflow-hidden bg-zinc-950 py-24 md:py-32">
         <div className="container mx-auto px-4 text-center">
@@ -34,6 +34,6 @@ export default function HomeLoading() {
           ))}
         </div>
       </section>
-    </main>
+    </>
   )
 }
