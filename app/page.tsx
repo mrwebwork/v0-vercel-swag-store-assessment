@@ -1,16 +1,34 @@
-export default function Home() {
+import { Suspense } from 'react'
+import HeroSection from '@/components/hero-section'
+import PromoBanner from '@/components/promo-banner'
+import PromoBannerSkeleton from '@/components/promo-banner-skeleton'
+import FeaturedProducts from '@/components/featured-products'
+import FeaturedProductsSkeleton from '@/components/featured-products-skeleton'
+
+export const metadata = {
+  title: 'Home',
+  description: 'Shop the official Vercel Swag Store for premium developer apparel and accessories.',
+  openGraph: {
+    title: 'Vercel Swag Store',
+    description: 'Official Vercel merchandise - premium developer swag',
+  },
+}
+
+export default function HomePage() {
   return (
-    <div className="flex min-h-screen items-center justify-center font-sans">
-      <main className="flex w-full max-w-3xl flex-col items-center gap-8 px-6 py-16 text-center sm:items-start sm:text-left">
-        <div className="flex flex-col gap-4">
-          <h1 className="text-4xl font-bold tracking-tight">
-            Vercel Swag Store Assessement
-          </h1>
-          <p className="max-w-md text-lg text-muted-foreground">
-            To get started, send a prompt or modify this page directly.
-          </p>
-        </div>
-      </main>
-    </div>
-  );
+    <>
+      <HeroSection />
+      <Suspense fallback={<PromoBannerSkeleton />}>
+        <PromoBanner />
+      </Suspense>
+      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 md:py-16 lg:px-8">
+        <h2 className="mb-8 text-2xl font-bold text-white md:text-3xl">
+          Featured Products
+        </h2>
+        <Suspense fallback={<FeaturedProductsSkeleton />}>
+          <FeaturedProducts />
+        </Suspense>
+      </section>
+    </>
+  )
 }
