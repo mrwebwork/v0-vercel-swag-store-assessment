@@ -2,8 +2,8 @@ import 'server-only'
 
 import type { Product, Stock, Promotion, Category, Cart, StoreConfig } from '@/types'
 
-const API_BASE_URL = process.env.API_BASE_URL
-const API_BYPASS_TOKEN = process.env.API_BYPASS_TOKEN
+const API_BASE_URL = process.env.API_BASE_URL ?? 'https://vercel-swag-store-api.vercel.app/api'
+const API_BYPASS_TOKEN = process.env.API_BYPASS_TOKEN ?? 'OykROcuULI6YJwAwk3VnWv4gMMbpAq6q'
 
 function getHeaders(): HeadersInit {
   return {
@@ -58,12 +58,15 @@ export async function fetchProducts(params?: FetchProductsParams): Promise<Produ
   return response.json()
 }
 
-export async function fetchProduct(idOrSlug: string): Promise<Product> {
+export async function fetchProduct(idOrSlug: string): Promise<Product | null> {
   const response = await fetch(`${API_BASE_URL}/products/${idOrSlug}`, {
     headers: getHeaders(),
   })
 
   if (!response.ok) {
+    if (response.status === 404) {
+      return null
+    }
     throw new Error(`Failed to fetch product: ${response.statusText}`)
   }
 

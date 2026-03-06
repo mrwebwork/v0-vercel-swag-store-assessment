@@ -18,59 +18,54 @@ interface ProductPageProps {
 export const dynamicParams = true
 
 // Static product data is cached with 'use cache'
+// Returns null for unknown slugs instead of throwing
 async function getProduct(slug: string) {
   'use cache'
   cacheLife('hours')
   cacheTag('products', `product-${slug}`)
-  return fetchProduct(slug)
+  try {
+    return await fetchProduct(slug)
+  } catch {
+    return null
+  }
 }
 
 export async function generateStaticParams() {
   try {
     const data = await fetchProducts({ limit: 100 })
     const products = Array.isArray(data) ? data : (data?.products ?? [])
-    if (products.length === 0) {
-      // Return a placeholder that won't match real routes
-      // This prevents EmptyGenerateStaticParamsError with cacheComponents
-      return [{ slug: '__placeholder__' }]
-    }
     return products.map((product) => ({
       slug: product.slug,
     }))
   } catch {
-    // Return a placeholder to prevent EmptyGenerateStaticParamsError
-    return [{ slug: '__placeholder__' }]
+    return []
   }
 }
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { slug } = await params
+  const product = await getProduct(slug)
   
-  try {
-    const product = await getProduct(slug)
-    return {
+  if (!product) {
+    return { title: 'Product Not Found' }
+  }
+  
+  return {
+    title: product.name,
+    description: product.description,
+    openGraph: {
       title: product.name,
       description: product.description,
-      openGraph: {
-        title: product.name,
-        description: product.description,
-        images: product.images[0] ? [{ url: product.images[0], width: 800, height: 800 }] : undefined,
-      },
-    }
-  } catch {
-    return {
-      title: 'Product Not Found',
-    }
+      images: product.images[0] ? [{ url: product.images[0], width: 800, height: 800 }] : undefined,
+    },
   }
 }
 
 export default async function ProductDetailPage({ params }: ProductPageProps) {
   const { slug } = await params
+  const product = await getProduct(slug)
   
-  let product
-  try {
-    product = await getProduct(slug)
-  } catch {
+  if (!product) {
     notFound()
   }
 
