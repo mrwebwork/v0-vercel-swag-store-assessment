@@ -20,7 +20,7 @@ const footerLinks = [
 ]
 
 export function Footer() {
-  const currentYear = 2025
+  const currentYear = 2026
 
   return (
     <footer className="border-t border-zinc-800 bg-black">
