@@ -2,12 +2,13 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { ShoppingCart } from 'lucide-react'
-import type { Product } from '@/types'
+import { useEffect, useState } from 'react'
+import type { Product, Stock } from '@/types'
 import { formatPrice, getFirstImage } from '@/lib/utils'
 import { useCart } from '@/context/cart-context'
-import { Button } from '@/components/ui/button'
-import { useState, useTransition } from 'react'
+import { getStockAction } from '@/lib/cart-actions'
+import { AddToCartButton } from '@/components/add-to-cart-button'
+import { Skeleton } from '@/components/ui/skeleton'
 
 type ProductCardProps = {
   product: Product
@@ -15,21 +16,27 @@ type ProductCardProps = {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCart()
-  const [isPending, startTransition] = useTransition()
-  const [added, setAdded] = useState(false)
+  const [stock, setStock] = useState<Stock | null>(null)
+  const [loadingStock, setLoadingStock] = useState(true)
 
-  function handleAddToCart(e: React.MouseEvent) {
-    e.preventDefault()
-    e.stopPropagation()
-    startTransition(async () => {
+  useEffect(() => {
+    async function loadStock() {
       try {
-        await addItem(product.id, 1)
-        setAdded(true)
-        setTimeout(() => setAdded(false), 1500)
-      } catch {
-        // Silently fail - cart context handles errors
+        const stockData = await getStockAction(product.id)
+        setStock(stockData)
+      } catch (error) {
+        console.error('Failed to load stock:', error)
+        // Default to out of stock on error for safety
+        setStock({ productId: product.id, stock: 0, inStock: false, lowStock: false })
+      } finally {
+        setLoadingStock(false)
       }
-    })
+    }
+    loadStock()
+  }, [product.id])
+
+  async function handleAddToCart() {
+    await addItem(product.id, 1)
   }
 
   return (
@@ -52,6 +59,14 @@ export default function ProductCard({ product }: ProductCardProps) {
               Featured
             </div>
           )}
+          {/* Out of stock overlay badge */}
+          {!loadingStock && stock && !stock.inStock && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+              <span className="rounded-md bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-300">
+                Out of Stock
+              </span>
+            </div>
+          )}
         </div>
         <div className="flex flex-1 flex-col p-4">
           <span className="mb-1.5 inline-block self-start rounded-full bg-zinc-800 px-2.5 py-0.5 text-xs font-medium capitalize text-zinc-400">
@@ -68,27 +83,16 @@ export default function ProductCard({ product }: ProductCardProps) {
 
       {/* Add to Cart button */}
       <div className="px-4 pb-4">
-        <Button
-          type="button"
-          size="sm"
-          className="w-full bg-white text-black hover:bg-zinc-200 disabled:bg-zinc-700 disabled:text-zinc-400"
-          onClick={handleAddToCart}
-          disabled={isPending || added}
-        >
-          {added ? (
-            'Added!'
-          ) : isPending ? (
-            <span className="flex items-center gap-2">
-              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-zinc-400 border-t-black" />
-              Adding...
-            </span>
-          ) : (
-            <span className="flex items-center gap-2">
-              <ShoppingCart className="h-3.5 w-3.5" />
-              Add to Cart
-            </span>
-          )}
-        </Button>
+        {loadingStock ? (
+          <Skeleton className="h-8 w-full rounded-md" />
+        ) : (
+          <AddToCartButton
+            stockQuantity={stock?.stock ?? 0}
+            onAddToCart={handleAddToCart}
+            size="sm"
+            showLowStockWarning={false}
+          />
+        )}
       </div>
     </div>
   )
