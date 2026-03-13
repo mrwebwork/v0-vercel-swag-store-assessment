@@ -93,6 +93,7 @@ export function Header() {
             <SheetContent
               side="right"
               className="w-full max-w-xs border-zinc-800 bg-zinc-950"
+              aria-describedby={undefined}
             >
               <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
               <div className="flex h-full flex-col">
