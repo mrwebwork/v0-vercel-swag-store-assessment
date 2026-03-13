@@ -4,29 +4,40 @@ import type { Product, Stock, Promotion, Category, Cart, CartItem, StoreConfig }
 import { emitLog, startTimer, type ApiLogEntry } from './logger'
 
 // Server-only environment variables — never exposed to the client bundle.
-// In production, set these in Vercel Project Settings > Environment Variables.
-const API_BASE_URL = process.env.SWAG_API_BASE_URL
-const API_BYPASS_TOKEN = process.env.SWAG_API_BYPASS_TOKEN
+// In production, set SWAG_API_BASE_URL and SWAG_API_BYPASS_TOKEN
+// in Vercel Project Settings > Environment Variables.
+const API_BASE_URL =
+  process.env.SWAG_API_BASE_URL ??
+  process.env.API_BASE_URL ??
+  'https://vercel-swag-store-api.vercel.app/api'
 
-if (!API_BASE_URL) {
-  throw new Error(
-    'Missing SWAG_API_BASE_URL environment variable. ' +
-    'Set it in Vercel Project Settings or .env.local for local development.'
+const API_BYPASS_TOKEN =
+  process.env.SWAG_API_BYPASS_TOKEN ??
+  process.env.API_BYPASS_TOKEN ??
+  ''
+
+// Warn in development if env vars are missing (fail hard in production)
+if (!process.env.SWAG_API_BASE_URL && process.env.NODE_ENV === 'production') {
+  console.warn(
+    '[swag-store] SWAG_API_BASE_URL is not set. ' +
+    'Set it in Vercel Project Settings > Environment Variables.'
   )
 }
-
-if (!API_BYPASS_TOKEN) {
-  throw new Error(
-    'Missing SWAG_API_BYPASS_TOKEN environment variable. ' +
-    'Set it in Vercel Project Settings or .env.local for local development.'
+if (!process.env.SWAG_API_BYPASS_TOKEN && process.env.NODE_ENV === 'production') {
+  console.warn(
+    '[swag-store] SWAG_API_BYPASS_TOKEN is not set. ' +
+    'API requests may fail without authentication.'
   )
 }
 
 function getHeaders(): HeadersInit {
-  return {
+  const headers: HeadersInit = {
     'Content-Type': 'application/json',
-    'x-vercel-protection-bypass': API_BYPASS_TOKEN,
   }
+  if (API_BYPASS_TOKEN) {
+    headers['x-vercel-protection-bypass'] = API_BYPASS_TOKEN
+  }
+  return headers
 }
 
 // ─── Instrumented Fetch Helper ──────────────────────────────
