@@ -3,32 +3,24 @@ import 'server-only'
 import type { Product, Stock, Promotion, Category, Cart, CartItem, StoreConfig } from '@/types'
 import { emitLog, startTimer, type ApiLogEntry } from './logger'
 
-// Server-only environment variables — never exposed to the client bundle.
-// In production, set SWAG_API_BASE_URL and SWAG_API_BYPASS_TOKEN
-// in Vercel Project Settings > Environment Variables.
-const API_BASE_URL =
-  process.env.SWAG_API_BASE_URL ??
-  process.env.API_BASE_URL ??
+/**
+ * Server-only environment variables — never exposed to the client bundle.
+ *
+ * For production: set SWAG_API_BASE_URL and SWAG_API_BYPASS_TOKEN
+ * in Vercel Project Settings > Environment Variables.
+ *
+ * Falls back to legacy env var names (API_BASE_URL / API_BYPASS_TOKEN)
+ * and then to the public API URL for local development.
+ */
+const API_BASE_URL: string =
+  process.env.SWAG_API_BASE_URL ||
+  process.env.API_BASE_URL ||
   'https://vercel-swag-store-api.vercel.app/api'
 
-const API_BYPASS_TOKEN =
-  process.env.SWAG_API_BYPASS_TOKEN ??
-  process.env.API_BYPASS_TOKEN ??
+const API_BYPASS_TOKEN: string =
+  process.env.SWAG_API_BYPASS_TOKEN ||
+  process.env.API_BYPASS_TOKEN ||
   ''
-
-// Warn in development if env vars are missing (fail hard in production)
-if (!process.env.SWAG_API_BASE_URL && process.env.NODE_ENV === 'production') {
-  console.warn(
-    '[swag-store] SWAG_API_BASE_URL is not set. ' +
-    'Set it in Vercel Project Settings > Environment Variables.'
-  )
-}
-if (!process.env.SWAG_API_BYPASS_TOKEN && process.env.NODE_ENV === 'production') {
-  console.warn(
-    '[swag-store] SWAG_API_BYPASS_TOKEN is not set. ' +
-    'API requests may fail without authentication.'
-  )
-}
 
 function getHeaders(): HeadersInit {
   const headers: HeadersInit = {
