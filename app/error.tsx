@@ -9,7 +9,16 @@ interface ErrorProps {
 
 export default function Error({ error, reset }: ErrorProps) {
   useEffect(() => {
-    // Optionally log the error to an error reporting service
+    // Detect stale server action errors (deployment mismatch)
+    const isStaleServerAction = error.message?.includes('Failed to find Server Action')
+    
+    if (isStaleServerAction) {
+      // Auto-reload to get the latest client bundle
+      window.location.reload()
+      return
+    }
+    
+    // Log non-stale errors
     console.error('App error:', error)
   }, [error])
 
