@@ -48,8 +48,8 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-zinc-800 bg-black">
-      <div className="mx-auto grid h-14 max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-black">
+      <div className="mx-auto grid h-14 max-w-7xl grid-cols-[1fr_auto] items-center px-4 sm:px-6 lg:grid-cols-[1fr_auto_1fr] lg:px-8">
         {/* Left: Logo + Store Name */}
         <Link
           href="/"
@@ -61,13 +61,13 @@ export function Header() {
           </span>
         </Link>
 
-        {/* Center: Desktop Navigation */}
-        <nav className="hidden items-center justify-self-center gap-6 md:flex" aria-label="Main navigation">
+        {/* Center: Desktop Navigation - only visible on lg+ */}
+        <nav className="hidden items-center justify-self-center gap-1 lg:flex" aria-label="Main navigation">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-zinc-400 transition-colors hover:text-white"
+              className="rounded-md px-3 py-1.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
             >
               {link.label}
             </Link>
@@ -75,7 +75,7 @@ export function Header() {
         </nav>
 
         {/* Right: Cart + Mobile Menu */}
-        <div className="flex items-center justify-self-end gap-2">
+        <div className="flex items-center justify-self-end gap-3">
           <CartBadge />
 
           {/* Mobile Menu */}
@@ -84,7 +84,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-zinc-400 hover:bg-zinc-800 hover:text-white md:hidden"
+                className="text-zinc-400 hover:bg-zinc-800 hover:text-white lg:hidden"
                 aria-label="Open menu"
               >
                 <Menu className="h-5 w-5" />

@@ -72,7 +72,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <span className="mb-1.5 inline-block self-start rounded-full bg-zinc-800 px-2.5 py-0.5 text-xs font-medium capitalize text-zinc-400">
             {product.category}
           </span>
-          <h3 className="mb-2 line-clamp-1 text-sm font-medium text-white transition-colors group-hover:text-blue-400 sm:text-base">
+          <h3 className="mb-2 line-clamp-2 min-h-[2.5rem] text-sm font-medium text-white transition-colors group-hover:text-blue-400 sm:min-h-[3rem] sm:text-base">
             {product.name}
           </h3>
           <p className="mt-auto text-base font-semibold text-white sm:text-lg">
