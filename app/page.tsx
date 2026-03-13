@@ -6,7 +6,6 @@ import FeaturedProducts from '@/components/featured-products'
 import FeaturedProductsSkeleton from '@/components/featured-products-skeleton'
 
 export const metadata = {
-  title: 'Home',
   description: 'Shop the official Vercel Swag Store for premium developer apparel and accessories.',
   openGraph: {
     title: 'Vercel Swag Store',
