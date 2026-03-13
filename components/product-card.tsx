@@ -12,9 +12,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 type ProductCardProps = {
   product: Product
+  /** Mark as high-priority for LCP — first 3 above-fold cards should be true */
+  isPriority?: boolean
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ product, isPriority = false }: ProductCardProps) {
   const { addItem } = useCart()
   const [stock, setStock] = useState<Stock | null>(null)
   const [loadingStock, setLoadingStock] = useState(true)
@@ -53,6 +55,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="object-cover transition-transform duration-500 group-hover:scale-105"
+            priority={isPriority}
           />
           {product.featured && (
             <div className="absolute left-3 top-3 rounded-full bg-blue-500 px-2.5 py-1 text-xs font-medium text-white">

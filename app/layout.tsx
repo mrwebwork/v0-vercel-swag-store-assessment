@@ -10,13 +10,7 @@ const _geist = Geist({ subsets: ['latin'] })
 const _geistMono = Geist_Mono({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.VERCEL_PROJECT_PRODUCTION_URL
-      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-      : process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : 'http://localhost:3000'
-  ),
+  metadataBase: new URL('https://vercel-merch.auradev.ai'),
   title: {
     default: 'Vercel Swag Store',
     template: '%s | Vercel Swag Store',
@@ -78,6 +72,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" data-scroll-behavior="smooth">
+      <head>
+        <link
+          rel="preconnect"
+          href="https://i8qy5y6gxkdgdcv9.public.blob.vercel-storage.com"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body
         className="min-h-screen bg-black font-sans text-white antialiased"
         suppressHydrationWarning

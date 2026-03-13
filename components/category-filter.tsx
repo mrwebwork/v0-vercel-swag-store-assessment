@@ -39,7 +39,7 @@ export default function CategoryFilter({ categories, defaultValue }: CategoryFil
       onValueChange={handleChange}
       disabled={isPending}
     >
-      <SelectTrigger className="h-11 w-full border-zinc-800 bg-zinc-900 text-white sm:w-[200px] [&>span]:text-left">
+      <SelectTrigger className="data-[size=default]:h-11 w-full border-zinc-800 bg-zinc-900 text-white sm:w-[200px] [&>span]:text-left">
         <SelectValue placeholder="All Categories" />
       </SelectTrigger>
       <SelectContent className="border-zinc-800 bg-zinc-900">
