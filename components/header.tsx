@@ -49,7 +49,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-zinc-800 bg-black">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-16 max-w-7xl items-center px-4 sm:px-6 lg:px-8">
         {/* Left: Logo + Store Name */}
         <Link
           href="/"
@@ -62,7 +62,7 @@ export function Header() {
         </Link>
 
         {/* Center: Desktop Navigation */}
-        <nav className="hidden items-center gap-6 md:flex" aria-label="Main navigation">
+        <nav className="hidden flex-1 items-center justify-center gap-6 md:flex" aria-label="Main navigation">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -75,7 +75,7 @@ export function Header() {
         </nav>
 
         {/* Right: Cart + Mobile Menu */}
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-2">
           <CartBadge />
 
           {/* Mobile Menu */}
