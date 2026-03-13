@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { AxiomWebVitals } from 'next-axiom'
 import { CartProvider } from '@/context/cart-context'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
@@ -91,6 +92,7 @@ export default function RootLayout({
           </div>
         </CartProvider>
         <Analytics />
+        <AxiomWebVitals />
       </body>
     </html>
   )
