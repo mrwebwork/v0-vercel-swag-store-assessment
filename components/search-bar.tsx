@@ -98,20 +98,20 @@ export default function SearchBar({ defaultValue = '' }: SearchBarProps) {
   return (
     <div className="relative flex items-center gap-2">
       <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" aria-hidden="true" />
         <Input
           type="text"
           placeholder="Search products (min 3 characters)..."
           value={value}
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="h-11 w-full rounded-lg border-zinc-800 bg-zinc-900 pl-10 pr-10 text-white placeholder:text-zinc-500 focus:border-zinc-700 focus:ring-zinc-700"
+          className="h-11 w-full rounded-lg border-zinc-800 bg-zinc-900 pl-10 pr-10 text-white placeholder:text-zinc-400 focus:border-zinc-700 focus:ring-zinc-700"
         />
         {value && (
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
             aria-label="Clear search"
           >
             <X className="h-4 w-4" />

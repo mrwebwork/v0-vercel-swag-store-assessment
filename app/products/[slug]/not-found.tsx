@@ -16,7 +16,7 @@ export default function ProductNotFound() {
         </p>
         <Link
           href="/search"
-          className="mt-8 inline-block rounded-lg bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-zinc-200"
+          className="mt-8 inline-block rounded-lg bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-zinc-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         >
           Browse all products
         </Link>

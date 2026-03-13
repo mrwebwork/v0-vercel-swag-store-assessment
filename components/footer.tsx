@@ -29,7 +29,7 @@ export function Footer() {
           {/* Logo + Copyright */}
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
             <VercelLogo className="h-4 w-4 text-white" />
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-zinc-400">
               &copy; {currentYear} Vercel Swag Store. All rights reserved.
             </p>
           </div>
@@ -40,7 +40,7 @@ export function Footer() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm text-zinc-500 transition-colors hover:text-white"
+                className="text-sm text-zinc-400 transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-sm"
               >
                 {link.label}
               </Link>
