@@ -3,13 +3,29 @@ import 'server-only'
 import type { Product, Stock, Promotion, Category, Cart, CartItem, StoreConfig } from '@/types'
 import { emitLog, startTimer, type ApiLogEntry } from './logger'
 
-const API_BASE_URL = process.env.API_BASE_URL ?? 'https://vercel-swag-store-api.vercel.app/api'
-const API_BYPASS_TOKEN = process.env.API_BYPASS_TOKEN ?? 'OykROcuULI6YJwAwk3VnWv4gMMbpAq6q'
+// Server-only environment variables — never exposed to the client bundle.
+// In production, set these in Vercel Project Settings > Environment Variables.
+const API_BASE_URL = process.env.SWAG_API_BASE_URL
+const API_BYPASS_TOKEN = process.env.SWAG_API_BYPASS_TOKEN
+
+if (!API_BASE_URL) {
+  throw new Error(
+    'Missing SWAG_API_BASE_URL environment variable. ' +
+    'Set it in Vercel Project Settings or .env.local for local development.'
+  )
+}
+
+if (!API_BYPASS_TOKEN) {
+  throw new Error(
+    'Missing SWAG_API_BYPASS_TOKEN environment variable. ' +
+    'Set it in Vercel Project Settings or .env.local for local development.'
+  )
+}
 
 function getHeaders(): HeadersInit {
   return {
     'Content-Type': 'application/json',
-    'x-vercel-protection-bypass': API_BYPASS_TOKEN ?? '',
+    'x-vercel-protection-bypass': API_BYPASS_TOKEN,
   }
 }
 
