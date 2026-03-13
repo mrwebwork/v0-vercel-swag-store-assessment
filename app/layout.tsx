@@ -26,16 +26,16 @@ export const metadata: Metadata = {
   generator: 'vswag-cert-v3',
   openGraph: {
     type: 'website',
+    url: '/',
     siteName: 'Vercel Swag Store',
     title: 'Vercel Swag Store',
     description: 'Gear up with the best developer swag on the internet.',
-    // Images are automatically generated via app/opengraph-image.tsx
+    locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Vercel Swag Store',
     description: 'Gear up with the best developer swag on the internet.',
-    // Images are automatically generated via app/twitter-image.tsx
   },
   icons: {
     icon: [
