@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   },
   description:
     'Official Vercel merchandise — hoodies, t-shirts, mugs, and more.',
-  generator: 'v0.app',
+  generator: 'vswag-cert-v3',
   openGraph: {
     type: 'website',
     siteName: 'Vercel Swag Store',
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#000000',
+  themeColor: '#171719',
   width: 'device-width',
   initialScale: 1,
 }
@@ -58,7 +58,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth">
       <body
         className="min-h-screen bg-black font-sans text-white antialiased"
         suppressHydrationWarning
