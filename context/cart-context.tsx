@@ -10,13 +10,28 @@ import {
   useCallback,
   type ReactNode,
 } from 'react'
-import type { Cart, CartItem } from '@/types'
+import type { Cart } from '@/types'
 import {
   getCartAction,
   addToCartAction,
   updateCartItemAction,
   removeCartItemAction,
 } from '@/lib/cart-actions'
+
+// Helper to detect stale server action errors (deployment mismatch)
+function isStaleServerActionError(error: unknown): boolean {
+  if (error instanceof Error) {
+    return error.message.includes('Failed to find Server Action')
+  }
+  return false
+}
+
+// Handle stale deployment by reloading the page
+function handleStaleDeployment() {
+  if (typeof window !== 'undefined') {
+    window.location.reload()
+  }
+}
 
 type OptimisticAction =
   | { type: 'add'; productId: string; quantity: number }
@@ -90,7 +105,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       try {
         const serverCart = await getCartAction()
         setCart(serverCart)
-      } catch {
+      } catch (error) {
+        if (isStaleServerActionError(error)) {
+          handleStaleDeployment()
+          return
+        }
         setCart(null)
       } finally {
         setIsLoading(false)
@@ -106,7 +125,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         try {
           const updatedCart = await addToCartAction(productId, quantity)
           setCart(updatedCart)
-        } catch {
+        } catch (error) {
+          if (isStaleServerActionError(error)) {
+            handleStaleDeployment()
+            return
+          }
           // Revert optimistic update by refetching
           try {
             const serverCart = await getCartAction()
@@ -127,7 +150,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         try {
           const updatedCart = await updateCartItemAction(itemId, quantity)
           setCart(updatedCart)
-        } catch {
+        } catch (error) {
+          if (isStaleServerActionError(error)) {
+            handleStaleDeployment()
+            return
+          }
           // Revert optimistic update by refetching
           try {
             const serverCart = await getCartAction()
@@ -148,7 +175,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         try {
           const updatedCart = await removeCartItemAction(itemId)
           setCart(updatedCart)
-        } catch {
+        } catch (error) {
+          if (isStaleServerActionError(error)) {
+            handleStaleDeployment()
+            return
+          }
           // Revert optimistic update by refetching
           try {
             const serverCart = await getCartAction()
