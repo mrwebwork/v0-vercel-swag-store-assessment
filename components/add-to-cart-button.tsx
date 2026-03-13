@@ -122,7 +122,7 @@ export function AddToCartButton({
           // Disabled/Out of stock state - clearly muted, non-interactive
           isDisabled && [
             'cursor-not-allowed',
-            'bg-zinc-800 text-zinc-500',
+            'bg-zinc-800 text-zinc-400',
             'border border-zinc-700',
             'opacity-100', // Override default disabled opacity for clearer visibility
           ],

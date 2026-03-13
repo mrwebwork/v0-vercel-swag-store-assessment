@@ -149,7 +149,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
           {/* Category Link - static/cached */}
           <div className="mt-auto border-t border-zinc-800 pt-6">
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-zinc-400">
               Category:{' '}
               <Link
                 href={`/search?category=${product.category}`}

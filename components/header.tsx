@@ -53,7 +53,7 @@ export function Header() {
         {/* Left: Logo + Store Name */}
         <Link
           href="/"
-          className="flex items-center gap-2 justify-self-start text-white transition-opacity hover:opacity-80"
+          className="flex items-center gap-2 justify-self-start rounded-md text-white transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         >
           <VercelLogo className="h-5 w-5" />
           <span className="text-lg font-semibold tracking-tight">
@@ -67,7 +67,7 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-md px-3 py-1.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+              className="rounded-md px-3 py-1.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             >
               {link.label}
             </Link>
@@ -115,7 +115,7 @@ export function Header() {
                     <Link
                       key={link.href}
                       href={link.href}
-                      className="flex min-h-[44px] items-center rounded-md px-3 text-lg font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
+                      className="flex min-h-[44px] items-center rounded-md px-3 text-lg font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       {link.label}
@@ -127,10 +127,10 @@ export function Header() {
                 <div className="mt-auto border-t border-zinc-800 py-6">
                   <Link
                     href="/cart"
-                    className="flex min-h-[44px] items-center gap-3 rounded-md px-3 text-lg font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
+                    className="flex min-h-[44px] items-center gap-3 rounded-md px-3 text-lg font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <ShoppingCart className="h-5 w-5 shrink-0" />
+                    <ShoppingCart className="h-5 w-5 shrink-0" aria-hidden="true" />
                     <span>Cart</span>
                   </Link>
                 </div>

@@ -83,7 +83,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       {products.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/50 py-20">
           <p className="text-2xl font-semibold text-zinc-300">No products found</p>
-          <p className="mt-2 text-zinc-500">
+          <p className="mt-2 text-zinc-400">
             {isSearching
               ? 'Try a different search term or category'
               : 'No products available in this category'}

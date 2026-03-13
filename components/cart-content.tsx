@@ -114,7 +114,7 @@ export function CartContent() {
             {formatPrice(cart.subtotal, cart.currency)}
           </span>
         </div>
-        <p className="mt-4 text-sm text-zinc-500">
+        <p className="mt-4 text-sm text-zinc-400">
           Shipping and taxes calculated at checkout.
         </p>
         <Button
