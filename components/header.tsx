@@ -92,33 +92,48 @@ export function Header() {
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="w-full max-w-xs border-zinc-800 bg-zinc-950"
+              className="w-full max-w-xs border-zinc-800 bg-zinc-950 px-6"
               aria-describedby={undefined}
             >
               <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
               <div className="flex h-full flex-col">
-                <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
+                {/* Header with logo */}
+                <div className="flex items-center border-b border-zinc-800 py-4">
                   <Link
                     href="/"
-                    className="flex items-center gap-2 text-white"
+                    className="flex min-h-[44px] items-center gap-3 text-white"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <VercelLogo className="h-5 w-5" />
-                    <span className="font-semibold">Vercel Swag</span>
+                    <VercelLogo className="h-5 w-5 shrink-0" />
+                    <span className="text-lg font-semibold">Vercel Swag</span>
                   </Link>
                 </div>
-                <nav className="flex flex-col gap-4 pt-6" aria-label="Mobile navigation">
+                
+                {/* Primary navigation links */}
+                <nav className="flex flex-col gap-2 py-6" aria-label="Mobile navigation">
                   {navLinks.map((link) => (
                     <Link
                       key={link.href}
                       href={link.href}
-                      className="text-lg font-medium text-zinc-400 transition-colors hover:text-white"
+                      className="flex min-h-[44px] items-center rounded-md px-3 text-lg font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       {link.label}
                     </Link>
                   ))}
                 </nav>
+                
+                {/* Secondary actions separator */}
+                <div className="mt-auto border-t border-zinc-800 py-6">
+                  <Link
+                    href="/cart"
+                    className="flex min-h-[44px] items-center gap-3 rounded-md px-3 text-lg font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <ShoppingCart className="h-5 w-5 shrink-0" />
+                    <span>Cart</span>
+                  </Link>
+                </div>
               </div>
             </SheetContent>
           </Sheet>
