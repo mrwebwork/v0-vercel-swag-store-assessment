@@ -1,12 +1,17 @@
 import 'server-only'
 
+import { cacheLife, cacheTag } from 'next/cache'
 import type { Product, Stock, Promotion, Category, Cart, CartItem, StoreConfig } from '@/types'
 import { emitLog, startTimer, type ApiLogEntry } from './logger'
 
 const API_BASE_URL = process.env.API_BASE_URL ?? 'https://vercel-swag-store-api.vercel.app/api'
-const API_BYPASS_TOKEN = process.env.API_BYPASS_TOKEN ?? 'OykROcuULI6YJwAwk3VnWv4gMMbpAq6q'
+const API_BYPASS_TOKEN = process.env.API_BYPASS_TOKEN
 
 function getHeaders(): HeadersInit {
+  if (!API_BYPASS_TOKEN) {
+    throw new Error('Missing API_BYPASS_TOKEN environment variable')
+  }
+
   return {
     'Content-Type': 'application/json',
     'x-vercel-protection-bypass': API_BYPASS_TOKEN ?? '',
@@ -105,6 +110,13 @@ type ProductsResponse = {
 }
 
 export async function fetchProducts(params?: FetchProductsParams): Promise<ProductsResponse> {
+  'use cache'
+  cacheLife('hours')
+  const tags = ['products']
+  if (params?.category) tags.push(`category-${params.category}`)
+  if (params?.featured) tags.push('featured-products')
+  cacheTag(...tags)
+
   const url = new URL(`${API_BASE_URL}/products`)
 
   if (params?.featured !== undefined) {
@@ -161,6 +173,10 @@ export async function fetchProducts(params?: FetchProductsParams): Promise<Produ
 }
 
 export async function fetchProduct(idOrSlug: string): Promise<Product | null> {
+  'use cache'
+  cacheLife('days')
+  cacheTag('products', `product-${idOrSlug}`)
+
   const response = await instrumentedFetch(
     `${API_BASE_URL}/products/${idOrSlug}`,
     { headers: getHeaders() },
@@ -235,6 +251,10 @@ export async function fetchPromotion(): Promise<Promotion | null> {
 // ─── Categories ─────────────────────────────────────────────
 
 export async function fetchCategories(): Promise<Category[]> {
+  'use cache'
+  cacheLife('days')
+  cacheTag('categories')
+
   const response = await instrumentedFetch(
     `${API_BASE_URL}/categories`,
     { headers: getHeaders() },
@@ -257,6 +277,10 @@ export async function fetchCategories(): Promise<Category[]> {
 // ─── Store Config ───────────────────────────────────────────
 
 export async function fetchStoreConfig(): Promise<StoreConfig> {
+  'use cache'
+  cacheLife('max')
+  cacheTag('store-config')
+
   const response = await instrumentedFetch(
     `${API_BASE_URL}/store/config`,
     { headers: getHeaders() },
@@ -283,7 +307,6 @@ export async function fetchStoreConfig(): Promise<StoreConfig> {
  * The API returns items as { productId, quantity, product: {...}, lineTotal }
  * We flatten this into our CartItem shape: { id, productId, name, image, price, quantity }
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function normalizeCart(raw: any): Cart {
   const items: CartItem[] = (raw.items ?? []).map((item: Record<string, unknown>) => {
     const product = item.product as Record<string, unknown> | undefined
