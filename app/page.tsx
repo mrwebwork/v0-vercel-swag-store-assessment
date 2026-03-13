@@ -10,6 +10,14 @@ export const metadata = {
   openGraph: {
     title: 'Vercel Swag Store',
     description: 'Official Vercel merchandise - premium developer swag',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Vercel Swag Store - Premium developer merchandise',
+      },
+    ],
   },
 }
 
