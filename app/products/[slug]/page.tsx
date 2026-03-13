@@ -18,7 +18,7 @@ interface ProductPageProps {
 // Returns null for unknown slugs instead of throwing
 async function getProduct(slug: string) {
   'use cache'
-  cacheLife('hours')
+  cacheLife('days')
   cacheTag('products', `product-${slug}`)
   try {
     return await fetchProduct(slug)

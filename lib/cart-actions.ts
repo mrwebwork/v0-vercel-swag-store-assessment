@@ -2,6 +2,7 @@
 
 import 'server-only'
 import { cookies } from 'next/headers'
+import { updateTag } from 'next/cache'
 import { createCart, addToCart, updateCartItem, removeCartItem, getCart, fetchProductStock } from './api'
 import { emitLog, startTimer } from './logger'
 import type { Cart } from '@/types'
@@ -36,6 +37,7 @@ async function getOrCreateCartToken(): Promise<string> {
       cookieStore.set(CART_TOKEN_COOKIE, token, {
         httpOnly: true,
         sameSite: 'lax',
+        secure: true,
         maxAge: 60 * 60 * 24, // 24 hours (matches API cart expiry)
         path: '/',
       })
@@ -117,6 +119,7 @@ export async function addToCartAction(
 ): Promise<Cart> {
   const token = await getOrCreateCartToken()
   const cart = await addToCart(token, productId, quantity)
+  await updateTag('cart')
   
   // Log cache invalidation event
   emitLog({
@@ -165,6 +168,7 @@ export async function updateCartItemAction(
   }
   
   const cart = await updateCartItem(token, itemId, quantity)
+  await updateTag('cart')
   
   // Log cache invalidation event
   emitLog({
@@ -210,6 +214,7 @@ export async function removeCartItemAction(itemId: string): Promise<Cart> {
   }
   
   const cart = await removeCartItem(token, itemId)
+  await updateTag('cart')
   
   // Log cache invalidation event
   emitLog({

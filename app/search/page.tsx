@@ -3,7 +3,7 @@ import { fetchProducts, fetchCategories } from '@/lib/api'
 import SearchBar from '@/components/search-bar'
 import CategoryFilter from '@/components/category-filter'
 import ProductCard from '@/components/product-card'
-import type { Product } from '@/types'
+import type { Product, Category } from '@/types'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -31,25 +31,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     categories = []
   }
 
-  // Fetch products based on search state
-  let products: Product[] = []
-  let isSearching = false
-
-  try {
-    if (q && q.length >= 3) {
-      // Server-side search with URL-persistent state - max 5 results
-      isSearching = true
-      const result = await fetchProducts({ search: q, category, limit: 5 })
-      products = result?.products ?? []
-    } else if (!q) {
-      // Default state: show all products (first page)
-      const result = await fetchProducts({ category, limit: 20 })
-      products = result?.products ?? []
-    }
-  } catch {
-    // Keep products as empty array on error
-  }
-
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <h1 className="mb-2 text-3xl font-bold tracking-tight text-white">
@@ -72,14 +53,50 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       </div>
 
       {/* Search Results Info */}
+      <Suspense
+        key={`${q ?? ''}-${category ?? ''}-${categories.length}`}
+        fallback={<ResultsSkeleton />}
+      >
+        <SearchResults q={q} category={category} categories={categories} />
+      </Suspense>
+    </div>
+  )
+}
+
+async function SearchResults({
+  q,
+  category,
+  categories,
+}: {
+  q?: string
+  category?: string
+  categories: Category[]
+}) {
+  let products: Product[] = []
+  let isSearching = false
+
+  try {
+    if (q && q.length >= 3) {
+      isSearching = true
+      const result = await fetchProducts({ search: q, category, limit: 5 })
+      products = result?.products ?? []
+    } else if (!q) {
+      const result = await fetchProducts({ category, limit: 20 })
+      products = result?.products ?? []
+    }
+  } catch {
+    // Keep products as empty array on error
+  }
+
+  return (
+    <>
       {isSearching && (
         <p className="mb-4 text-sm text-zinc-400">
-          {products.length} result{products.length !== 1 ? 's' : ''} for "{q}"
+          {products.length} result{products.length !== 1 ? 's' : ''} for &quot;{q}&quot;
           {category ? ` in ${categories.find(c => c.slug === category)?.name ?? category}` : ''}
         </p>
       )}
 
-      {/* Empty State */}
       {products.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/50 py-20">
           <p className="text-2xl font-semibold text-zinc-300">No products found</p>
@@ -91,7 +108,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         </div>
       )}
 
-      {/* Product Grid */}
       {products.length > 0 && (
         <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {products.map((product) => (
@@ -99,7 +115,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           ))}
         </div>
       )}
-    </div>
+    </>
   )
 }
 
@@ -115,5 +131,15 @@ function SearchBarSkeleton() {
 function CategoryFilterSkeleton() {
   return (
     <div className="h-11 w-full animate-pulse rounded-lg bg-zinc-800 sm:w-[200px]" />
+  )
+}
+
+function ResultsSkeleton() {
+  return (
+    <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+      {Array.from({ length: 8 }).map((_, idx) => (
+        <div key={idx} className="h-64 animate-pulse rounded-xl bg-zinc-800" />
+      ))}
+    </div>
   )
 }

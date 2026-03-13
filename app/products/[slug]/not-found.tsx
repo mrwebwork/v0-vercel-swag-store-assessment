@@ -12,7 +12,7 @@ export default function ProductNotFound() {
       <div className="text-center">
         <h1 className="text-3xl font-bold text-white">Product Not Found</h1>
         <p className="mt-2 text-zinc-400">
-          Sorry, we couldn't find the product you're looking for.
+          Sorry, we couldn&apos;t find the product you&apos;re looking for.
         </p>
         <Link
           href="/search"
