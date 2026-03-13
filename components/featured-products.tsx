@@ -4,6 +4,7 @@ import type { Product } from '@/types'
 import ProductGrid from '@/components/product-grid'
 
 // Cached data fetching function
+// Log metadata is passed through fetchProducts to the instrumented fetch
 async function getFeaturedProducts(): Promise<Product[]> {
   'use cache'
   cacheLife('hours')

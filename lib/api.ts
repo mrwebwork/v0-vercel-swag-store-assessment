@@ -1,6 +1,7 @@
 import 'server-only'
 
 import type { Product, Stock, Promotion, Category, Cart, CartItem, StoreConfig } from '@/types'
+import { emitLog, startTimer, type ApiLogEntry } from './logger'
 
 const API_BASE_URL = process.env.API_BASE_URL ?? 'https://vercel-swag-store-api.vercel.app/api'
 const API_BYPASS_TOKEN = process.env.API_BYPASS_TOKEN ?? 'OykROcuULI6YJwAwk3VnWv4gMMbpAq6q'
@@ -9,6 +10,79 @@ function getHeaders(): HeadersInit {
   return {
     'Content-Type': 'application/json',
     'x-vercel-protection-bypass': API_BYPASS_TOKEN ?? '',
+  }
+}
+
+// ─── Instrumented Fetch Helper ──────────────────────────────
+
+type LogMeta = Partial<ApiLogEntry>
+
+async function instrumentedFetch(
+  url: string,
+  options: RequestInit,
+  logMeta: LogMeta
+): Promise<Response> {
+  const getElapsed = startTimer()
+  const method = options.method ?? 'GET'
+  const path = new URL(url).pathname
+
+  try {
+    const response = await fetch(url, options)
+    const durationMs = getElapsed()
+
+    if (response.ok) {
+      emitLog({
+        level: 'info',
+        service: 'swag-store-api',
+        category: 'api_request',
+        method,
+        path,
+        endpoint: logMeta.endpoint ?? 'unknown',
+        timestamp: new Date().toISOString(),
+        durationMs,
+        status: response.status,
+        success: true,
+        ...logMeta,
+      })
+    } else {
+      emitLog({
+        level: 'error',
+        service: 'swag-store-api',
+        category: 'api_error',
+        method,
+        path,
+        endpoint: logMeta.endpoint ?? 'unknown',
+        timestamp: new Date().toISOString(),
+        durationMs,
+        status: response.status,
+        success: false,
+        errorCode: `HTTP_${response.status}`,
+        errorMessage: response.statusText,
+        ...logMeta,
+      })
+    }
+
+    return response
+  } catch (error) {
+    const durationMs = getElapsed()
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+
+    emitLog({
+      level: 'error',
+      service: 'swag-store-api',
+      category: 'api_error',
+      method,
+      path,
+      endpoint: logMeta.endpoint ?? 'unknown',
+      timestamp: new Date().toISOString(),
+      durationMs,
+      success: false,
+      errorCode: 'NETWORK_ERROR',
+      errorMessage,
+      ...logMeta,
+    })
+
+    throw error
   }
 }
 
@@ -49,9 +123,23 @@ export async function fetchProducts(params?: FetchProductsParams): Promise<Produ
     url.searchParams.set('limit', String(params.limit))
   }
 
-  const response = await fetch(url.toString(), {
-    headers: getHeaders(),
-  })
+  const response = await instrumentedFetch(
+    url.toString(),
+    { headers: getHeaders() },
+    {
+      endpoint: 'getProducts',
+      cacheStrategy: 'use_cache',
+      cacheProfile: 'hours',
+      cacheTags: ['products'],
+      params: {
+        featured: params?.featured,
+        category: params?.category,
+        search: params?.search,
+        page: params?.page,
+        limit: params?.limit,
+      },
+    }
+  )
 
   if (!response.ok) {
     throw new Error(`Failed to fetch products: ${response.statusText}`)
@@ -73,9 +161,17 @@ export async function fetchProducts(params?: FetchProductsParams): Promise<Produ
 }
 
 export async function fetchProduct(idOrSlug: string): Promise<Product | null> {
-  const response = await fetch(`${API_BASE_URL}/products/${idOrSlug}`, {
-    headers: getHeaders(),
-  })
+  const response = await instrumentedFetch(
+    `${API_BASE_URL}/products/${idOrSlug}`,
+    { headers: getHeaders() },
+    {
+      endpoint: 'getProductBySlugOrId',
+      cacheStrategy: 'use_cache',
+      cacheProfile: 'days',
+      cacheTags: ['products', `product-${idOrSlug}`],
+      params: { slugOrId: idOrSlug },
+    }
+  )
 
   if (!response.ok) {
     if (response.status === 404) {
@@ -89,10 +185,18 @@ export async function fetchProduct(idOrSlug: string): Promise<Product | null> {
 }
 
 export async function fetchProductStock(idOrSlug: string): Promise<Stock> {
-  const response = await fetch(`${API_BASE_URL}/products/${idOrSlug}/stock`, {
-    headers: getHeaders(),
-    cache: 'no-store',
-  })
+  const response = await instrumentedFetch(
+    `${API_BASE_URL}/products/${idOrSlug}/stock`,
+    {
+      headers: getHeaders(),
+      cache: 'no-store',
+    },
+    {
+      endpoint: 'getProductStock',
+      cacheStrategy: 'no_cache',
+      params: { productId: idOrSlug },
+    }
+  )
 
   if (!response.ok) {
     throw new Error(`Failed to fetch product stock: ${response.statusText}`)
@@ -105,10 +209,17 @@ export async function fetchProductStock(idOrSlug: string): Promise<Stock> {
 // ─── Promotions ─────────────────────────────────────────────
 
 export async function fetchPromotion(): Promise<Promotion | null> {
-  const response = await fetch(`${API_BASE_URL}/promotions`, {
-    headers: getHeaders(),
-    cache: 'no-store',
-  })
+  const response = await instrumentedFetch(
+    `${API_BASE_URL}/promotions`,
+    {
+      headers: getHeaders(),
+      cache: 'no-store',
+    },
+    {
+      endpoint: 'getPromotion',
+      cacheStrategy: 'suspense_stream',
+    }
+  )
 
   if (!response.ok) {
     if (response.status === 404) {
@@ -124,9 +235,16 @@ export async function fetchPromotion(): Promise<Promotion | null> {
 // ─── Categories ─────────────────────────────────────────────
 
 export async function fetchCategories(): Promise<Category[]> {
-  const response = await fetch(`${API_BASE_URL}/categories`, {
-    headers: getHeaders(),
-  })
+  const response = await instrumentedFetch(
+    `${API_BASE_URL}/categories`,
+    { headers: getHeaders() },
+    {
+      endpoint: 'getCategories',
+      cacheStrategy: 'use_cache',
+      cacheProfile: 'days',
+      cacheTags: ['categories'],
+    }
+  )
 
   if (!response.ok) {
     throw new Error(`Failed to fetch categories: ${response.statusText}`)
@@ -139,9 +257,16 @@ export async function fetchCategories(): Promise<Category[]> {
 // ─── Store Config ───────────────────────────────────────────
 
 export async function fetchStoreConfig(): Promise<StoreConfig> {
-  const response = await fetch(`${API_BASE_URL}/store/config`, {
-    headers: getHeaders(),
-  })
+  const response = await instrumentedFetch(
+    `${API_BASE_URL}/store/config`,
+    { headers: getHeaders() },
+    {
+      endpoint: 'getStoreConfig',
+      cacheStrategy: 'use_cache',
+      cacheProfile: 'max',
+      cacheTags: ['store-config'],
+    }
+  )
 
   if (!response.ok) {
     throw new Error(`Failed to fetch store config: ${response.statusText}`)
@@ -184,10 +309,19 @@ function normalizeCart(raw: any): Cart {
 }
 
 export async function createCart(): Promise<{ token: string }> {
-  const response = await fetch(`${API_BASE_URL}/cart/create`, {
-    method: 'POST',
-    headers: getHeaders(),
-  })
+  const response = await instrumentedFetch(
+    `${API_BASE_URL}/cart/create`,
+    {
+      method: 'POST',
+      headers: getHeaders(),
+    },
+    {
+      endpoint: 'createCart',
+      cacheStrategy: 'no_cache',
+      cartAction: 'create',
+      cartTokenPresent: false,
+    }
+  )
 
   if (!response.ok) {
     throw new Error(`Failed to create cart: ${response.statusText}`)
@@ -207,12 +341,21 @@ export async function createCart(): Promise<{ token: string }> {
 }
 
 export async function getCart(cartToken: string): Promise<Cart> {
-  const response = await fetch(`${API_BASE_URL}/cart`, {
-    headers: {
-      ...getHeaders(),
-      'x-cart-token': cartToken,
+  const response = await instrumentedFetch(
+    `${API_BASE_URL}/cart`,
+    {
+      headers: {
+        ...getHeaders(),
+        'x-cart-token': cartToken,
+      },
     },
-  })
+    {
+      endpoint: 'getCart',
+      cacheStrategy: 'no_cache',
+      cartAction: 'read',
+      cartTokenPresent: true,
+    }
+  )
 
   if (!response.ok) {
     throw new Error(`Failed to get cart: ${response.statusText}`)
@@ -227,14 +370,24 @@ export async function addToCart(
   productId: string,
   quantity: number
 ): Promise<Cart> {
-  const response = await fetch(`${API_BASE_URL}/cart`, {
-    method: 'POST',
-    headers: {
-      ...getHeaders(),
-      'x-cart-token': cartToken,
+  const response = await instrumentedFetch(
+    `${API_BASE_URL}/cart`,
+    {
+      method: 'POST',
+      headers: {
+        ...getHeaders(),
+        'x-cart-token': cartToken,
+      },
+      body: JSON.stringify({ productId, quantity }),
     },
-    body: JSON.stringify({ productId, quantity }),
-  })
+    {
+      endpoint: 'addToCart',
+      cacheStrategy: 'no_cache',
+      cartAction: 'add',
+      cartTokenPresent: true,
+      params: { productId, quantity },
+    }
+  )
 
   if (!response.ok) {
     throw new Error(`Failed to add to cart: ${response.statusText}`)
@@ -249,14 +402,24 @@ export async function updateCartItem(
   itemId: string,
   quantity: number
 ): Promise<Cart> {
-  const response = await fetch(`${API_BASE_URL}/cart/${itemId}`, {
-    method: 'PATCH',
-    headers: {
-      ...getHeaders(),
-      'x-cart-token': cartToken,
+  const response = await instrumentedFetch(
+    `${API_BASE_URL}/cart/${itemId}`,
+    {
+      method: 'PATCH',
+      headers: {
+        ...getHeaders(),
+        'x-cart-token': cartToken,
+      },
+      body: JSON.stringify({ quantity }),
     },
-    body: JSON.stringify({ quantity }),
-  })
+    {
+      endpoint: 'updateCartItem',
+      cacheStrategy: 'no_cache',
+      cartAction: 'update',
+      cartTokenPresent: true,
+      params: { itemId, quantity },
+    }
+  )
 
   if (!response.ok) {
     throw new Error(`Failed to update cart item: ${response.statusText}`)
@@ -267,13 +430,23 @@ export async function updateCartItem(
 }
 
 export async function removeCartItem(cartToken: string, itemId: string): Promise<Cart> {
-  const response = await fetch(`${API_BASE_URL}/cart/${itemId}`, {
-    method: 'DELETE',
-    headers: {
-      ...getHeaders(),
-      'x-cart-token': cartToken,
+  const response = await instrumentedFetch(
+    `${API_BASE_URL}/cart/${itemId}`,
+    {
+      method: 'DELETE',
+      headers: {
+        ...getHeaders(),
+        'x-cart-token': cartToken,
+      },
     },
-  })
+    {
+      endpoint: 'removeCartItem',
+      cacheStrategy: 'no_cache',
+      cartAction: 'remove',
+      cartTokenPresent: true,
+      params: { itemId },
+    }
+  )
 
   if (!response.ok) {
     throw new Error(`Failed to remove cart item: ${response.statusText}`)
