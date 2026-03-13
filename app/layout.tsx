@@ -29,20 +29,13 @@ export const metadata: Metadata = {
     siteName: 'Vercel Swag Store',
     title: 'Vercel Swag Store',
     description: 'Gear up with the best developer swag on the internet.',
-    images: [
-      {
-        url: '/opengraph-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'Vercel Swag Store - Premium developer merchandise including hoodies, caps, stickers, and accessories',
-      },
-    ],
+    // Images are automatically generated via app/opengraph-image.tsx
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Vercel Swag Store',
     description: 'Gear up with the best developer swag on the internet.',
-    images: ['/opengraph-image.png'],
+    // Images are automatically generated via app/twitter-image.tsx
   },
   icons: {
     icon: [
