@@ -49,11 +49,11 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-zinc-800 bg-black">
-      <div className="mx-auto flex h-16 max-w-7xl items-center px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto grid h-14 max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-4 sm:px-6 lg:px-8">
         {/* Left: Logo + Store Name */}
         <Link
           href="/"
-          className="flex items-center gap-2 text-white transition-opacity hover:opacity-80"
+          className="flex items-center gap-2 justify-self-start text-white transition-opacity hover:opacity-80"
         >
           <VercelLogo className="h-5 w-5" />
           <span className="text-lg font-semibold tracking-tight">
@@ -62,7 +62,7 @@ export function Header() {
         </Link>
 
         {/* Center: Desktop Navigation */}
-        <nav className="hidden flex-1 items-center justify-center gap-6 md:flex" aria-label="Main navigation">
+        <nav className="hidden items-center justify-self-center gap-6 md:flex" aria-label="Main navigation">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -75,7 +75,7 @@ export function Header() {
         </nav>
 
         {/* Right: Cart + Mobile Menu */}
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex items-center justify-self-end gap-2">
           <CartBadge />
 
           {/* Mobile Menu */}
