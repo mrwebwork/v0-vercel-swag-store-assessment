@@ -10,6 +10,13 @@ const _geist = Geist({ subsets: ['latin'] })
 const _geistMono = Geist_Mono({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : 'http://localhost:3000'
+  ),
   title: {
     default: 'Vercel Swag Store',
     template: '%s | Vercel Swag Store',
@@ -19,13 +26,25 @@ export const metadata: Metadata = {
   generator: 'vswag-cert-v3',
   openGraph: {
     type: 'website',
+    url: '/',
     siteName: 'Vercel Swag Store',
     title: 'Vercel Swag Store',
-    description: 'Official Vercel merchandise',
-    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
+    description: 'Gear up with the best developer swag on the internet.',
+    locale: 'en_US',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Vercel Swag Store - Premium developer merchandise including hoodies, caps, stickers, and accessories',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
+    title: 'Vercel Swag Store',
+    description: 'Gear up with the best developer swag on the internet.',
+    images: ['/og-image.png'],
   },
   icons: {
     icon: [
