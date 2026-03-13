@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   },
   description:
     'Official Vercel merchandise — hoodies, t-shirts, mugs, and more.',
-  generator: 'v0.app',
+  generator: 'vswag-cert-v3',
   openGraph: {
     type: 'website',
     siteName: 'Vercel Swag Store',
