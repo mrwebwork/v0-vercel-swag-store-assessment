@@ -310,7 +310,7 @@ function normalizeCart(raw: any): Cart {
       id: (item.productId as string) ?? '',
       productId: (item.productId as string) ?? '',
       name: (product?.name as string) ?? 'Unknown Product',
-      image: ((product?.images as string[]) ?? [])[0] ?? '/placeholder.svg',
+      image: ((product?.images as string[]) ?? [])[0],
       price: (product?.price as number) ?? 0,
       quantity: (item.quantity as number) ?? 1,
     }
