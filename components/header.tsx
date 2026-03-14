@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ShoppingCart, Menu, X } from 'lucide-react'
 import { useCart } from '@/context/cart-context'
 import { Button } from '@/components/ui/button'
@@ -21,16 +21,24 @@ function VercelLogo({ className }: { className?: string }) {
 }
 
 function CartBadge() {
-  const { itemCount } = useCart()
+  const { itemCount, isLoading } = useCart()
+  const [hasMounted, setHasMounted] = useState(false)
+
+  useEffect(() => {
+    setHasMounted(true)
+  }, [])
+
+  // Only show the badge after mounting to prevent hydration mismatch
+  const showBadge = hasMounted && !isLoading && itemCount > 0
 
   return (
     <Link
       href="/cart"
       className="relative flex items-center justify-center rounded-md p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-      aria-label={`Shopping cart with ${itemCount} items`}
+      aria-label={hasMounted ? `Shopping cart with ${itemCount} items` : 'Shopping cart'}
     >
       <ShoppingCart className="h-5 w-5" />
-      {itemCount > 0 && (
+      {showBadge && (
         <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white text-xs font-medium text-black">
           {itemCount > 99 ? '99+' : itemCount}
         </span>
