@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { Suspense } from 'react'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AxiomWebVitals } from 'next-axiom'
@@ -92,7 +93,9 @@ export default function RootLayout({
           </div>
         </CartProvider>
         <Analytics />
-        <AxiomWebVitals />
+        <Suspense fallback={null}>
+          <AxiomWebVitals />
+        </Suspense>
       </body>
     </html>
   )
