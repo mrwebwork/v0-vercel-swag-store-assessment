@@ -13,5 +13,5 @@ export function formatPrice(cents: number, currency?: string): string {
 }
 
 export function getFirstImage(images: string[]): string {
-  return images[0];
+  return images[0] ?? '/placeholder.svg'
 }
