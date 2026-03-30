@@ -11,7 +11,7 @@ import { ProductActions } from '@/components/product-actions'
 import type { Metadata } from 'next'
 
 interface ProductPageProps {
-  params: Promise<{ slug: string }>
+  params: Promise<{ param: string }>
 }
 
 // Static product data is cached with 'use cache'
@@ -32,7 +32,7 @@ export async function generateStaticParams() {
     const data = await fetchProducts({ limit: 100 })
     const products = data?.products ?? []
     return products.map((product) => ({
-      slug: product.slug,
+      param: product.slug,
     }))
   } catch {
     return []
@@ -40,13 +40,13 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
-  const { slug } = await params
-  const product = await getProduct(slug)
-  
+  const { param } = await params
+  const product = await getProduct(param)
+
   if (!product) {
     return { title: 'Product Not Found' }
   }
-  
+
   return {
     title: product.name,
     description: product.description,
@@ -59,9 +59,9 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 }
 
 export default async function ProductDetailPage({ params }: ProductPageProps) {
-  const { slug } = await params
-  const product = await getProduct(slug)
-  
+  const { param } = await params
+  const product = await getProduct(param)
+
   if (!product) {
     notFound()
   }
