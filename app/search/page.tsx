@@ -99,34 +99,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     totalPages = result.totalPages
   }
 
-  try {
-    if (q && q.length >= 3) {
-      // Server-side search with pagination
-      isSearching = true
-      const result = await fetchProducts({
-        search: q,
-        category,
-        page: currentPage,
-        limit: Math.min(DEFAULT_ITEMS_PER_PAGE, MAX_ITEMS_PER_PAGE)
-      })
-      products = result?.products ?? []
-      totalProducts = result?.total ?? products.length
-      totalPages = result?.totalPages ?? 1
-    } else if (!q) {
-      // Default state: show all products with pagination
-      const result = await fetchProducts({
-        category,
-        page: currentPage,
-        limit: Math.min(DEFAULT_ITEMS_PER_PAGE, MAX_ITEMS_PER_PAGE)
-      })
-      products = result?.products ?? []
-      totalProducts = result?.total ?? products.length
-      totalPages = result?.totalPages ?? 1
-    }
-  } catch {
-    // Keep products as empty array on error
-  }
-
   // Build pagination URL helper
   function buildPageUrl(pageNum: number) {
     const params = new URLSearchParams()
