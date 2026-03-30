@@ -41,17 +41,26 @@ pnpm dev
 ### Project Structure
 
 ```bash
-├── app/                      
-│   ├── cart/                 
-│   ├── products/[slug]/    
+├── app/
+│   ├── cart/
+│   ├── products/[param]/
 │   ├── search/
-│   ├── layout.tsx   
-│   ├── not-found.tsx            
-│   └── page.tsx              
-├── components/            
-├── context/                   
-├── lib/                      
-└── types/
-├── next.config.ts     
+│   ├── privacy/
+│   ├── terms/
+│   ├── support/
+│   ├── globals.css
+│   ├── layout.tsx
+│   ├── loading.tsx
+│   ├── error.tsx
+│   ├── not-found.tsx
+│   └── page.tsx
+├── components/
+│   └── ui/
+├── context/
+├── hooks/
+├── lib/
+├── types/
+├── docs/
+├── next.config.ts
 └── tsconfig.json
 ```
