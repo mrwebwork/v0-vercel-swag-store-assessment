@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { ReactNode } from 'react';
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AxiomWebVitals } from 'next-axiom'
@@ -70,7 +71,7 @@ export const viewport: Viewport = {
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: ReactNode
 }>) {
   return (
     <html lang="en" data-scroll-behavior="smooth">

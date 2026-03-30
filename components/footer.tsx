@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { CurrentYear } from '@/components/current-year'
 
 function VercelLogo({ className }: { className?: string }) {
   return (
@@ -20,7 +21,6 @@ const footerLinks = [
 ]
 
 export function Footer() {
-  const currentYear = 2026
 
   return (
     <footer className="border-t border-zinc-800 bg-black">
@@ -30,7 +30,8 @@ export function Footer() {
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
             <VercelLogo className="h-4 w-4 text-white" />
             <p className="text-sm text-zinc-400">
-              &copy; {currentYear} Vercel Swag Store. All rights reserved.
+              {/* year client component */}
+              &copy; <CurrentYear /> Vercel Swag Store. All rights reserved.
             </p>
           </div>
 

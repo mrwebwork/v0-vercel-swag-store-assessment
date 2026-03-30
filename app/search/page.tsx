@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import { cacheLife, cacheTag } from 'next/cache'
 import Link from 'next/link'
 import { fetchProducts, fetchCategories } from '@/lib/api'
 import SearchBar from '@/components/search-bar'
@@ -25,18 +26,35 @@ interface SearchPageProps {
   searchParams: Promise<{ q?: string; category?: string; page?: string }>
 }
 
+async function getCategories() {
+  'use cache'
+  cacheLife('days')
+  cacheTag('categories')
+
+  try {
+    const categories = await fetchCategories()
+    return Array.isArray(categories) ? categories : []
+  } catch (error) {
+    return []
+  }
+
+}
+
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const { q, category, page } = await searchParams
   const currentPage = Math.max(1, parseInt(page ?? '1', 10) || 1)
 
   // Fetch categories (cached - static data)
-  let categories: Awaited<ReturnType<typeof fetchCategories>> = []
-  try {
-    categories = await fetchCategories()
-    if (!Array.isArray(categories)) categories = []
-  } catch {
-    categories = []
-  }
+  // let categories: Awaited<ReturnType<typeof fetchCategories>> = []
+  // try {
+  //   categories = await fetchCategories()
+  //   if (!Array.isArray(categories)) categories = []
+  // } catch {
+  //   categories = []
+  // }
+
+  // Fetch categories (cached for days) static reference data
+  const categories = await getCategories()
 
   // Fetch products based on search state
   let products: Product[] = []
