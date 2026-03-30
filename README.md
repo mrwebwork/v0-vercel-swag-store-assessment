@@ -1,35 +1,57 @@
-# v0-vercel-swag-store-assessment
+# Vercel Swag Store
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+An ecommerce storefront built with Next.js, React, and TypeScript. Leveraging the App Router features and best practices.
 
-## Built with v0
-
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
-
-[Continue working on v0 →](https://v0.app/chat/projects/prj_8MvOwHksxnuHawPGJBgyypOowAU9)
+> **Live Demo:** [vercel-merch.auradev.ai](https://vercel-merch.auradev.ai)
 
 ## Getting Started
 
-First, run the development server:
+### Tech Stack
+
+- **Framework:** Next.js 16.2.1, React 19.2.4
+- **UI/UX:** Tailwind, shadcn/ui
+- **Language:** TypeScript 5.7.3
+- **Observability:** Axiom + Vercel Analytics
+
+#### 1. Prerequisites
+
+- Node.js 22+
+- pnpm (`npm install -g pnpm`)
+
+
+#### 2. Local Development
+
+Clone the repository and start the development server:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+git clone https://github.com/mrwebwork/v0-vercel-swag-store-assessment.git
+cd v0-vercel-swag-store-assessment
+
+pnpm install
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Scripts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+  - `pnpm dev`: Starts the dev server with Turbopack
+  - `pnpm build`: Creates a optimized production build
+  - `pnpm start`: Starts the production server
+  - `pnpm lint`: Runs ESLint
 
-## Learn More
+### Project Structure
 
-To learn more, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
-
-<a href="https://v0.app/chat/api/kiro/clone/mrwebwork/v0-vercel-swag-store-assessment" alt="Open in Kiro"><img src="https://pdgvvgmkdvyeydso.public.blob.vercel-storage.com/open%20in%20kiro.svg?sanitize=true" /></a>
+```bash
+├── app/                      
+│   ├── cart/                 
+│   ├── products/[slug]/    
+│   ├── search/
+│   ├── layout.tsx   
+│   ├── not-found.tsx            
+│   └── page.tsx              
+├── components/            
+├── context/                   
+├── lib/                      
+└── types/
+├── next.config.ts     
+└── tsconfig.json
+```

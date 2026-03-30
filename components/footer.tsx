@@ -1,4 +1,25 @@
 import Link from 'next/link'
+import { cacheLife, cacheTag } from 'next/cache'
+import { fetchStoreConfig } from '@/lib/api'
+import type { StoreConfig } from '@/types'
+
+async function getStoreConfig(): Promise<StoreConfig | null> {
+  'use cache'
+  cacheLife('max')
+  cacheTag('store-config')
+
+  try {
+    return await fetchStoreConfig()
+  } catch {
+    return null
+  }
+}
+
+async function getCurrentYear(): Promise<number> {
+  'use cache'
+  cacheLife('days')
+  return new Date().getFullYear()
+}
 
 function VercelLogo({ className }: { className?: string }) {
   return (
@@ -19,8 +40,11 @@ const footerLinks = [
   { href: '/support', label: 'Support' },
 ]
 
-export function Footer() {
-  const currentYear = 2026
+export async function Footer() {
+  const config = await getStoreConfig()
+  const currentYear = await getCurrentYear()
+
+  const socialLinks = config?.socialLinks
 
   return (
     <footer className="border-t border-zinc-800 bg-black">
@@ -45,6 +69,41 @@ export function Footer() {
                 {link.label}
               </Link>
             ))}
+
+            {/* Social links from store config API */}
+            {socialLinks?.twitter && (
+              <a
+                href={socialLinks.twitter}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-zinc-400 transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-sm"
+                aria-label="Vercel on Twitter"
+              >
+                Twitter
+              </a>
+            )}
+            {socialLinks?.github && (
+              <a
+                href={socialLinks.github}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-zinc-400 transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-sm"
+                aria-label="Vercel on GitHub"
+              >
+                GitHub
+              </a>
+            )}
+            {socialLinks?.discord && (
+              <a
+                href={socialLinks.discord}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-zinc-400 transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-sm"
+                aria-label="Vercel on Discord"
+              >
+                Discord
+              </a>
+            )}
           </nav>
         </div>
       </div>

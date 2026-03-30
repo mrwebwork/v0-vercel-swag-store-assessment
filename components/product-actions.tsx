@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useCart } from '@/context/cart-context'
-import { getStockAction } from '@/lib/cart-actions'
+import { useProductStock } from '@/hooks/use-product-stock'
 import { QuantitySelector } from '@/components/quantity-selector'
 import { AddToCartButton } from '@/components/add-to-cart-button'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { Stock } from '@/types'
+import { toast } from 'sonner'
 
 interface ProductActionsProps {
   productId: string
@@ -16,30 +16,37 @@ interface ProductActionsProps {
 export function ProductActions({ productId, productName }: ProductActionsProps) {
   const { addItem } = useCart()
   const [quantity, setQuantity] = useState(1)
-  const [stock, setStock] = useState<Stock | null>(null)
-  const [loadingStock, setLoadingStock] = useState(true)
+  const { stock, isLoading: loadingStock, isOutOfStock } = useProductStock({ productId })
+  const isAddingRef = useRef(false)
 
-  useEffect(() => {
-    async function loadStock() {
-      try {
-        const stockData = await getStockAction(productId)
-        setStock(stockData)
-      } catch (error) {
-        console.error('Failed to load stock:', error)
-        // Default to out of stock on error for safety
-        setStock({ productId, stock: 0, inStock: false, lowStock: false })
-      } finally {
-        setLoadingStock(false)
+  // Handle add to cart with quantity reset and toast notification
+  const handleAddToCart = useCallback(async () => {
+    // Prevent duplicate rapid clicks
+    if (isAddingRef.current) return
+    isAddingRef.current = true
+    
+    try {
+      const result = await addItem(productId, quantity)
+      
+      if (result.success) {
+        toast.success('Added to cart', {
+          description: `${quantity} x ${productName} ${quantity === 1 ? 'has' : 'have'} been added to your cart`,
+          duration: 2500,
+        })
+        setQuantity(1)
+      } else if (result.error && !result.error.includes('already in progress')) {
+        toast.error('Failed to add to cart', {
+          description: result.error,
+          duration: 3000,
+        })
       }
+    } finally {
+      setTimeout(() => {
+        isAddingRef.current = false
+      }, 300)
     }
-    loadStock()
-  }, [productId])
+  }, [addItem, productId, productName, quantity])
 
-  async function handleAddToCart() {
-    await addItem(productId, quantity)
-  }
-
-  const isOutOfStock = stock !== null && !stock.inStock
   const maxQuantity = stock?.stock ?? 99
 
   return (

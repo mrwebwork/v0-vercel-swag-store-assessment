@@ -377,7 +377,7 @@ export async function getCart(cartToken: string): Promise<Cart> {
   )
 
   if (!response.ok) {
-    throw new Error(`Failed to get cart: ${response.statusText}`)
+    throw new Error(`Failed to get cart: ${response.status}`)
   }
 
   const json = await response.json()

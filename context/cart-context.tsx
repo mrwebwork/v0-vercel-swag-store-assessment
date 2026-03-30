@@ -8,6 +8,7 @@ import {
   useTransition,
   useOptimistic,
   useCallback,
+  useRef,
   type ReactNode,
 } from 'react'
 import type { Cart } from '@/types'
@@ -38,12 +39,18 @@ type OptimisticAction =
   | { type: 'update'; itemId: string; quantity: number }
   | { type: 'remove'; itemId: string }
 
+/** Result of an add-to-cart operation */
+type AddToCartResult = {
+  success: boolean
+  error?: string
+}
+
 type CartContextValue = {
   cart: Cart | null
   itemCount: number
   isLoading: boolean
   isPending: boolean
-  addItem: (productId: string, quantity: number) => Promise<void>
+  addItem: (productId: string, quantity: number) => Promise<AddToCartResult>
   updateItem: (itemId: string, quantity: number) => Promise<void>
   removeItem: (itemId: string) => Promise<void>
 }
@@ -98,6 +105,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const [isPending, startTransition] = useTransition()
   const [optimisticCart, addOptimisticAction] = useOptimistic(cart, cartReducer)
+  
+  // Request queue to prevent duplicate rapid additions
+  const pendingRequests = useRef<Set<string>>(new Set())
 
   // Hydrate cart on mount
   useEffect(() => {
@@ -119,25 +129,47 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const addItem = useCallback(
-    async (productId: string, quantity: number) => {
-      startTransition(async () => {
-        addOptimisticAction({ type: 'add', productId, quantity })
-        try {
-          const updatedCart = await addToCartAction(productId, quantity)
-          setCart(updatedCart)
-        } catch (error) {
-          if (isStaleServerActionError(error)) {
-            handleStaleDeployment()
-            return
-          }
-          // Revert optimistic update by refetching
+    async (productId: string, quantity: number): Promise<AddToCartResult> => {
+      // Create unique key for this request
+      const requestKey = `${productId}-${Date.now()}`
+      
+      // Check if there's already a pending request for this product
+      if (pendingRequests.current.has(productId)) {
+        return { success: false, error: 'Request already in progress' }
+      }
+      
+      // Mark request as pending
+      pendingRequests.current.add(productId)
+      
+      return new Promise((resolve) => {
+        startTransition(async () => {
+          addOptimisticAction({ type: 'add', productId, quantity })
           try {
-            const serverCart = await getCartAction()
-            setCart(serverCart)
-          } catch {
-            // If refetch also fails, keep current state
+            const updatedCart = await addToCartAction(productId, quantity)
+            setCart(updatedCart)
+            pendingRequests.current.delete(productId)
+            resolve({ success: true })
+          } catch (error) {
+            pendingRequests.current.delete(productId)
+            
+            if (isStaleServerActionError(error)) {
+              handleStaleDeployment()
+              resolve({ success: false, error: 'Session expired. Refreshing...' })
+              return
+            }
+            
+            // Revert optimistic update by refetching
+            try {
+              const serverCart = await getCartAction()
+              setCart(serverCart)
+            } catch {
+              // If refetch also fails, keep current state
+            }
+            
+            const errorMessage = error instanceof Error ? error.message : 'Failed to add item'
+            resolve({ success: false, error: errorMessage })
           }
-        }
+        })
       })
     },
     [addOptimisticAction]

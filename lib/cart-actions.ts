@@ -11,7 +11,7 @@ const CART_TOKEN_COOKIE = 'cart-token'
 async function getOrCreateCartToken(): Promise<string> {
   const cookieStore = await cookies()
   let token = cookieStore.get(CART_TOKEN_COOKIE)?.value
-  
+
   if (token) {
     // Log that we read an existing token
     emitLog({
@@ -39,7 +39,7 @@ async function getOrCreateCartToken(): Promise<string> {
         maxAge: 60 * 60 * 24, // 24 hours (matches API cart expiry)
         path: '/',
       })
-      
+
       emitLog({
         level: 'info',
         service: 'swag-store-api',
@@ -73,14 +73,14 @@ async function getOrCreateCartToken(): Promise<string> {
       throw error
     }
   }
-  
+
   return token
 }
 
 export async function getCartAction(): Promise<Cart | null> {
   const cookieStore = await cookies()
   const token = cookieStore.get(CART_TOKEN_COOKIE)?.value
-  
+
   if (!token) {
     // Log skipped cart read due to no token
     emitLog({
@@ -98,13 +98,14 @@ export async function getCartAction(): Promise<Cart | null> {
     })
     return null
   }
-  
+
   try {
     return await getCart(token)
   } catch (error: unknown) {
-    // Token expired or invalid — clear cookie and return empty cart
-    const err = error as { status?: number; message?: string }
-    if (err?.status === 404 || err?.status === 401 || err?.message?.includes('expired')) {
+    // Token expired or invalid, clear cookie and return empty cart
+    const message = error instanceof Error ? error.message : ''
+    // Token expired or invalid, clear stale cookie
+    if (message.includes('404') || message.includes('401') || message.includes('expired')) {
       cookieStore.delete(CART_TOKEN_COOKIE)
     }
     return null
@@ -117,7 +118,7 @@ export async function addToCartAction(
 ): Promise<Cart> {
   const token = await getOrCreateCartToken()
   const cart = await addToCart(token, productId, quantity)
-  
+
   // Log cache invalidation event
   emitLog({
     level: 'info',
@@ -134,7 +135,7 @@ export async function addToCartAction(
     cartTokenPresent: true,
     params: { productId, quantity },
   })
-  
+
   return cart
 }
 
@@ -144,7 +145,7 @@ export async function updateCartItemAction(
 ): Promise<Cart> {
   const cookieStore = await cookies()
   const token = cookieStore.get(CART_TOKEN_COOKIE)?.value
-  
+
   if (!token) {
     emitLog({
       level: 'warn',
@@ -163,9 +164,9 @@ export async function updateCartItemAction(
     })
     throw new Error('No cart token')
   }
-  
+
   const cart = await updateCartItem(token, itemId, quantity)
-  
+
   // Log cache invalidation event
   emitLog({
     level: 'info',
@@ -182,14 +183,14 @@ export async function updateCartItemAction(
     cartTokenPresent: true,
     params: { itemId, quantity },
   })
-  
+
   return cart
 }
 
 export async function removeCartItemAction(itemId: string): Promise<Cart> {
   const cookieStore = await cookies()
   const token = cookieStore.get(CART_TOKEN_COOKIE)?.value
-  
+
   if (!token) {
     emitLog({
       level: 'warn',
@@ -208,9 +209,9 @@ export async function removeCartItemAction(itemId: string): Promise<Cart> {
     })
     throw new Error('No cart token')
   }
-  
+
   const cart = await removeCartItem(token, itemId)
-  
+
   // Log cache invalidation event
   emitLog({
     level: 'info',
@@ -227,7 +228,7 @@ export async function removeCartItemAction(itemId: string): Promise<Cart> {
     cartTokenPresent: true,
     params: { itemId },
   })
-  
+
   return cart
 }
 

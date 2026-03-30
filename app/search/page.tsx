@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import { cacheLife, cacheTag } from 'next/cache'
 import Link from 'next/link'
 import { fetchProducts, fetchCategories } from '@/lib/api'
 import SearchBar from '@/components/search-bar'
@@ -25,17 +26,46 @@ interface SearchPageProps {
   searchParams: Promise<{ q?: string; category?: string; page?: string }>
 }
 
+async function getCategories() {
+  'use cache'
+  cacheLife('days')
+  cacheTag('categories')
+
+  try {
+    const categories = await fetchCategories()
+    return Array.isArray(categories) ? categories : []
+  } catch (error) {
+    return []
+  }
+
+}
+
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const { q, category, page } = await searchParams
   const currentPage = Math.max(1, parseInt(page ?? '1', 10) || 1)
 
-  // Fetch categories (cached - static data)
-  let categories: Awaited<ReturnType<typeof fetchCategories>> = []
-  try {
-    categories = await fetchCategories()
-    if (!Array.isArray(categories)) categories = []
-  } catch {
-    categories = []
+  // Fetch categories (cached for days) static reference data
+  const categories = await getCategories()
+
+  async function getBrowseProducts(
+    category?: string,
+    page: number = 1,
+    limit: number = 20
+  ) {
+    'use cache'
+    cacheLife('hours')
+    cacheTag('products', ...(category ? [`category-${category}`] : []))
+
+    try {
+      const result = await fetchProducts({ category, page, limit })
+      return {
+        products: result?.products ?? [],
+        total: result?.total ?? 0,
+        totalPages: result?.totalPages ?? 1,
+      }
+    } catch {
+      return { products: [], total: 0, totalPages: 1 }
+    }
   }
 
   // Fetch products based on search state
@@ -43,33 +73,30 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   let totalProducts = 0
   let totalPages = 1
   let isSearching = false
+  const limit = Math.min(DEFAULT_ITEMS_PER_PAGE, MAX_ITEMS_PER_PAGE)
 
-  try {
-    if (q && q.length >= 3) {
-      // Server-side search with pagination
-      isSearching = true
-      const result = await fetchProducts({ 
-        search: q, 
-        category, 
-        page: currentPage, 
-        limit: Math.min(DEFAULT_ITEMS_PER_PAGE, MAX_ITEMS_PER_PAGE) 
+  if (q && q.length >= 3) {
+    // Search queries are dynamic user input, not cached
+    isSearching = true
+    try {
+      const result = await fetchProducts({
+        search: q,
+        category,
+        page: currentPage,
+        limit
       })
       products = result?.products ?? []
       totalProducts = result?.total ?? products.length
       totalPages = result?.totalPages ?? 1
-    } else if (!q) {
-      // Default state: show all products with pagination
-      const result = await fetchProducts({ 
-        category, 
-        page: currentPage, 
-        limit: Math.min(DEFAULT_ITEMS_PER_PAGE, MAX_ITEMS_PER_PAGE) 
-      })
-      products = result?.products ?? []
-      totalProducts = result?.total ?? products.length
-      totalPages = result?.totalPages ?? 1
+    } catch (error) {
+      // keep products empty array on error
     }
-  } catch {
-    // Keep products as empty array on error
+  } else if (!q) {
+    // browse + category filter (cached hours) per category page combo
+    const result = await getBrowseProducts(category, currentPage, limit)
+    products = result.products
+    totalProducts = result.total
+    totalPages = result.totalPages
   }
 
   // Build pagination URL helper
@@ -86,24 +113,24 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   function getPageNumbers(): (number | 'ellipsis')[] {
     const pages: (number | 'ellipsis')[] = []
     const maxVisiblePages = 5
-    
+
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) pages.push(i)
     } else {
       pages.push(1)
-      
+
       if (currentPage > 3) pages.push('ellipsis')
-      
+
       const start = Math.max(2, currentPage - 1)
       const end = Math.min(totalPages - 1, currentPage + 1)
-      
+
       for (let i = start; i <= end; i++) pages.push(i)
-      
+
       if (currentPage < totalPages - 2) pages.push('ellipsis')
-      
+
       pages.push(totalPages)
     }
-    
+
     return pages
   }
 
@@ -181,12 +208,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             {currentPage > 1 ? (
               <Link href={buildPageUrl(currentPage - 1)} aria-label="Go to previous page">
                 <ChevronLeft className="h-4 w-4" />
-                <span className="sr-only sm:not-sr-only sm:ml-1">Previous</span>
+                <span className="sr-only">Previous</span>
               </Link>
             ) : (
               <span>
                 <ChevronLeft className="h-4 w-4" />
-                <span className="sr-only sm:not-sr-only sm:ml-1">Previous</span>
+                <span className="sr-only">Previous</span>
               </span>
             )}
           </Button>
@@ -232,12 +259,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           >
             {currentPage < totalPages ? (
               <Link href={buildPageUrl(currentPage + 1)} aria-label="Go to next page">
-                <span className="sr-only sm:not-sr-only sm:mr-1">Next</span>
+                <span className="sr-only">Next</span>
                 <ChevronRight className="h-4 w-4" />
               </Link>
             ) : (
               <span>
-                <span className="sr-only sm:not-sr-only sm:mr-1">Next</span>
+                <span className="sr-only">Next</span>
                 <ChevronRight className="h-4 w-4" />
               </span>
             )}
