@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef, useEffect } from 'react'
 import { ShoppingCart, Check, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -36,10 +36,18 @@ export function AddToCartButton({
 }: AddToCartButtonProps) {
   const [isPending, startTransition] = useTransition()
   const [added, setAdded] = useState(false)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const isOutOfStock = stockQuantity <= 0
   const isLowStock = stockQuantity > 0 && stockQuantity <= lowStockThreshold
   const isDisabled = isOutOfStock || isPending || externalLoading
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    }
+  }, [])
 
   function handleClick() {
     if (isDisabled) return
@@ -48,7 +56,10 @@ export function AddToCartButton({
       try {
         await onAddToCart()
         setAdded(true)
-        setTimeout(() => setAdded(false), 2000)
+
+        // Clear any existing timeout - solves edge case for users rapid clicking
+        if (timeoutRef.current) clearTimeout(timeoutRef.current)
+        timeoutRef.current = setTimeout(() => setAdded(false), 2000)
       } catch (error) {
         console.error('Failed to add to cart:', error)
       }
