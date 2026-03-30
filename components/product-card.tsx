@@ -2,11 +2,10 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
-import type { Product, Stock } from '@/types'
+import type { Product } from '@/types'
 import { formatPrice, getFirstImage } from '@/lib/utils'
-import { useCart } from '@/context/cart-context'
-import { getStockAction } from '@/lib/cart-actions'
+import { useProductStock } from '@/hooks/use-product-stock'
+import { useAddToCart } from '@/hooks/use-add-to-cart'
 import { AddToCartButton } from '@/components/add-to-cart-button'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -17,29 +16,8 @@ type ProductCardProps = {
 }
 
 export default function ProductCard({ product, isPriority = false }: ProductCardProps) {
-  const { addItem } = useCart()
-  const [stock, setStock] = useState<Stock | null>(null)
-  const [loadingStock, setLoadingStock] = useState(true)
-
-  useEffect(() => {
-    async function loadStock() {
-      try {
-        const stockData = await getStockAction(product.id)
-        setStock(stockData)
-      } catch (error) {
-        console.error('Failed to load stock:', error)
-        // Default to out of stock on error for safety
-        setStock({ productId: product.id, stock: 0, inStock: false, lowStock: false })
-      } finally {
-        setLoadingStock(false)
-      }
-    }
-    loadStock()
-  }, [product.id])
-
-  async function handleAddToCart() {
-    await addItem(product.id, 1)
-  }
+  const { stock, isLoading: loadingStock } = useProductStock({ productId: product.id })
+  const { addToCart } = useAddToCart({ productId: product.id, quantity: 1 })
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50 transition-all duration-300 hover:border-zinc-700 hover:shadow-lg hover:shadow-black/20">
@@ -75,7 +53,7 @@ export default function ProductCard({ product, isPriority = false }: ProductCard
           <span className="mb-1.5 inline-block self-start rounded-full bg-zinc-800 px-2.5 py-0.5 text-xs font-medium capitalize text-zinc-400">
             {product.category}
           </span>
-          <h3 className="mb-2 line-clamp-2 min-h-[2.5rem] text-sm font-medium text-white transition-colors group-hover:text-blue-400 sm:min-h-[3rem] sm:text-base">
+          <h3 className="mb-2 line-clamp-2 min-h-10 text-sm font-medium text-white transition-colors group-hover:text-blue-400 sm:min-h-12 sm:text-base">
             {product.name}
           </h3>
           <p className="mt-auto text-base font-semibold text-white sm:text-lg">
@@ -90,10 +68,12 @@ export default function ProductCard({ product, isPriority = false }: ProductCard
           <Skeleton className="h-8 w-full rounded-md" />
         ) : (
           <AddToCartButton
+            className="cursor-pointer"
             stockQuantity={stock?.stock ?? 0}
-            onAddToCart={handleAddToCart}
+            onAddToCart={addToCart}
             size="sm"
             showLowStockWarning={false}
+            productName={product.name}
           />
         )}
       </div>

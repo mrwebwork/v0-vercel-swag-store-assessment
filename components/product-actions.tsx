@@ -1,12 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { useCart } from '@/context/cart-context'
-import { getStockAction } from '@/lib/cart-actions'
+import { useProductStock } from '@/hooks/use-product-stock'
 import { QuantitySelector } from '@/components/quantity-selector'
 import { AddToCartButton } from '@/components/add-to-cart-button'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { Stock } from '@/types'
 
 interface ProductActionsProps {
   productId: string
@@ -16,30 +15,14 @@ interface ProductActionsProps {
 export function ProductActions({ productId, productName }: ProductActionsProps) {
   const { addItem } = useCart()
   const [quantity, setQuantity] = useState(1)
-  const [stock, setStock] = useState<Stock | null>(null)
-  const [loadingStock, setLoadingStock] = useState(true)
+  const { stock, isLoading: loadingStock, isOutOfStock } = useProductStock({ productId })
 
-  useEffect(() => {
-    async function loadStock() {
-      try {
-        const stockData = await getStockAction(productId)
-        setStock(stockData)
-      } catch (error) {
-        console.error('Failed to load stock:', error)
-        // Default to out of stock on error for safety
-        setStock({ productId, stock: 0, inStock: false, lowStock: false })
-      } finally {
-        setLoadingStock(false)
-      }
-    }
-    loadStock()
-  }, [productId])
-
-  async function handleAddToCart() {
+  // Reset quantity to 1 after successful add
+  const handleAddToCart = useCallback(async () => {
     await addItem(productId, quantity)
-  }
+    setQuantity(1)
+  }, [addItem, productId, quantity])
 
-  const isOutOfStock = stock !== null && !stock.inStock
   const maxQuantity = stock?.stock ?? 99
 
   return (

@@ -1,14 +1,19 @@
 'use client'
 
-import { useState, useTransition, useRef, useEffect } from 'react'
+import { useState, useTransition, useEffect, useRef, useCallback } from 'react'
 import { ShoppingCart, Check, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
+/** Duration in ms for the success confirmation state before resetting */
+const SUCCESS_RESET_DELAY = 2000
+
+type ButtonState = 'idle' | 'loading' | 'success' | 'out-of-stock'
+
 interface AddToCartButtonProps {
   /** Current stock quantity - button disabled when <= 0 */
   stockQuantity: number
-  /** Callback when the button is clicked */
+  /** Callback when the button is clicked - must add exactly one product per invocation */
   onAddToCart: () => void | Promise<void>
   /** Optional loading state from parent */
   isLoading?: boolean
@@ -35,75 +40,142 @@ export function AddToCartButton({
   productName,
 }: AddToCartButtonProps) {
   const [isPending, startTransition] = useTransition()
-  const [added, setAdded] = useState(false)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [showSuccess, setShowSuccess] = useState(false)
+  const resetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const isOutOfStock = stockQuantity <= 0
   const isLowStock = stockQuantity > 0 && stockQuantity <= lowStockThreshold
-  const isDisabled = isOutOfStock || isPending || externalLoading
+  const isDisabled = isOutOfStock || isPending || externalLoading || showSuccess
 
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      if (resetTimeoutRef.current) {
+        clearTimeout(resetTimeoutRef.current)
+      }
     }
   }, [])
 
-  function handleClick() {
+  // Determine current button state
+  const getButtonState = useCallback((): ButtonState => {
+    if (isOutOfStock) return 'out-of-stock'
+    if (isPending || externalLoading) return 'loading'
+    if (showSuccess) return 'success'
+    return 'idle'
+  }, [isOutOfStock, isPending, externalLoading, showSuccess])
+
+  const handleClick = useCallback(() => {
     if (isDisabled) return
+
+    // Clear any existing timeout before starting a new action
+    if (resetTimeoutRef.current) {
+      clearTimeout(resetTimeoutRef.current)
+      resetTimeoutRef.current = null
+    }
 
     startTransition(async () => {
       try {
         await onAddToCart()
-        setAdded(true)
-
-        // Clear any existing timeout - solves edge case for users rapid clicking
-        if (timeoutRef.current) clearTimeout(timeoutRef.current)
-        timeoutRef.current = setTimeout(() => setAdded(false), 2000)
+        setShowSuccess(true)
+        
+        // Schedule reset back to idle state
+        resetTimeoutRef.current = setTimeout(() => {
+          setShowSuccess(false)
+          resetTimeoutRef.current = null
+        }, SUCCESS_RESET_DELAY)
       } catch (error) {
         console.error('Failed to add to cart:', error)
       }
     })
-  }
+  }, [isDisabled, onAddToCart])
 
-  // Determine button content based on state
+  // Generate accessible label based on state
+  const getAriaLabel = useCallback((): string => {
+    const buttonState = getButtonState()
+    const name = productName ? ` ${productName}` : ''
+    
+    switch (buttonState) {
+      case 'out-of-stock':
+        return `Out of stock${name ? ` - ${productName}` : ''} - cannot add to cart`
+      case 'success':
+        return `${productName ?? 'Item'} added to cart`
+      case 'loading':
+        return `Adding${name} to cart...`
+      default:
+        return `Add${name} to cart`
+    }
+  }, [getButtonState, productName])
+
+  // Get button styles based on current state
+  const getButtonStyles = useCallback((): string[] => {
+    const buttonState = getButtonState()
+    
+    switch (buttonState) {
+      case 'out-of-stock':
+        return [
+          'cursor-not-allowed',
+          'bg-zinc-800 text-zinc-400',
+          'border border-zinc-700',
+        ]
+      case 'success':
+        return [
+          'bg-emerald-500 text-white',
+          'cursor-default',
+        ]
+      case 'loading':
+        return [
+          'cursor-wait',
+          'bg-zinc-800 text-zinc-400',
+          'border border-zinc-700',
+        ]
+      default:
+        return [
+          'bg-white text-zinc-900',
+          'hover:bg-zinc-100 hover:shadow-md',
+          'active:scale-[0.98] active:bg-zinc-200',
+          'focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900',
+        ]
+    }
+  }, [getButtonState])
+
+  // Render button content based on current state
   const renderButtonContent = () => {
-    if (isOutOfStock) {
-      return (
-        <>
-          <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
-          <span>Out of Stock</span>
-        </>
-      )
-    }
+    const buttonState = getButtonState()
+    const iconClass = "h-4 w-4 sm:h-5 sm:w-5"
 
-    if (added) {
-      return (
-        <>
-          <Check className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
-          <span>Added to Cart</span>
-        </>
-      )
+    switch (buttonState) {
+      case 'out-of-stock':
+        return (
+          <>
+            <AlertCircle className={iconClass} aria-hidden="true" />
+            <span>Out of Stock</span>
+          </>
+        )
+      case 'loading':
+        return (
+          <>
+            <span
+              className={cn(iconClass, "animate-spin rounded-full border-2 border-current border-t-transparent")}
+              aria-hidden="true"
+            />
+            <span>Adding...</span>
+          </>
+        )
+      case 'success':
+        return (
+          <>
+            <Check className={iconClass} aria-hidden="true" />
+            <span>Added!</span>
+          </>
+        )
+      default:
+        return (
+          <>
+            <ShoppingCart className={iconClass} aria-hidden="true" />
+            <span>Add to Cart</span>
+          </>
+        )
     }
-
-    if (isPending || externalLoading) {
-      return (
-        <>
-          <span
-            className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent sm:h-5 sm:w-5"
-            aria-hidden="true"
-          />
-          <span>Adding...</span>
-        </>
-      )
-    }
-
-    return (
-      <>
-        <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
-        <span>Add to Cart</span>
-      </>
-    )
   }
 
   return (
@@ -114,34 +186,10 @@ export function AddToCartButton({
         onClick={handleClick}
         disabled={isDisabled}
         aria-disabled={isDisabled}
-        aria-label={
-          isOutOfStock
-            ? `Out of stock${productName ? ` - ${productName}` : ''} - cannot add to cart`
-            : added
-              ? `${productName ? `${productName} a` : 'Item a'}dded to cart`
-              : `Add${productName ? ` ${productName}` : ''} to Cart`
-        }
+        aria-label={getAriaLabel()}
         className={cn(
           'w-full gap-2 font-medium transition-all duration-200',
-          // Enabled state - high contrast, inviting
-          !isDisabled && [
-            'bg-white text-zinc-900',
-            'hover:bg-zinc-100 hover:shadow-md',
-            'active:scale-[0.98] active:bg-zinc-200',
-            'focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900',
-          ],
-          // Disabled/Out of stock state - clearly muted, non-interactive
-          isDisabled && [
-            'cursor-not-allowed',
-            'bg-zinc-800 text-zinc-400',
-            'border border-zinc-700',
-            'opacity-100', // Override default disabled opacity for clearer visibility
-          ],
-          // Added state - success feedback
-          added && [
-            'bg-emerald-500 text-white',
-            'hover:bg-emerald-500',
-          ],
+          getButtonStyles(),
           className
         )}
       >

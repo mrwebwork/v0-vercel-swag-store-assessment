@@ -102,9 +102,10 @@ export async function getCartAction(): Promise<Cart | null> {
   try {
     return await getCart(token)
   } catch (error: unknown) {
-    // Token expired or invalid — clear cookie and return empty cart
-    const err = error as { status?: number; message?: string }
-    if (err?.status === 404 || err?.status === 401 || err?.message?.includes('expired')) {
+    // Token expired or invalid, clear cookie and return empty cart
+    const message = error instanceof Error ? error.message : ''
+    // Token expired or invalid, clear stale cookie
+    if (message.includes('404') || message.includes('401') || message.includes('expired')) {
       cookieStore.delete(CART_TOKEN_COOKIE)
     }
     return null
