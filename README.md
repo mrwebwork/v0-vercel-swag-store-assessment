@@ -1,6 +1,6 @@
 # Vercel Swag Store
 
-An ecommerce storefront built with Next.js 16, React 19, and TypeScript 5.7 leveraging the latest App Router functionaility and best practices.
+An ecommerce storefront built with Next.js, React, and TypeScript. Leveraging the App Router features and best practices.
 
 > **Live Demo:** [vercel-merch.auradev.ai](https://vercel-merch.auradev.ai)
 
@@ -8,8 +8,8 @@ An ecommerce storefront built with Next.js 16, React 19, and TypeScript 5.7 leve
 
 ### Tech Stack
 
-- **Framework:** Next.js 16.1.6 (App Router)
-- **UI:** React 19.2.4, Tailwind CSS 4.2.0, shadcn/ui
+- **Framework:** Next.js 16.2.1, React 19.2.4
+- **UI/UX:** Tailwind, shadcn/ui
 - **Language:** TypeScript 5.7.3
 - **Observability:** Axiom + Vercel Analytics
 
