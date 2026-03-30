@@ -48,21 +48,21 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     if (q && q.length >= 3) {
       // Server-side search with pagination
       isSearching = true
-      const result = await fetchProducts({ 
-        search: q, 
-        category, 
-        page: currentPage, 
-        limit: Math.min(DEFAULT_ITEMS_PER_PAGE, MAX_ITEMS_PER_PAGE) 
+      const result = await fetchProducts({
+        search: q,
+        category,
+        page: currentPage,
+        limit: Math.min(DEFAULT_ITEMS_PER_PAGE, MAX_ITEMS_PER_PAGE)
       })
       products = result?.products ?? []
       totalProducts = result?.total ?? products.length
       totalPages = result?.totalPages ?? 1
     } else if (!q) {
       // Default state: show all products with pagination
-      const result = await fetchProducts({ 
-        category, 
-        page: currentPage, 
-        limit: Math.min(DEFAULT_ITEMS_PER_PAGE, MAX_ITEMS_PER_PAGE) 
+      const result = await fetchProducts({
+        category,
+        page: currentPage,
+        limit: Math.min(DEFAULT_ITEMS_PER_PAGE, MAX_ITEMS_PER_PAGE)
       })
       products = result?.products ?? []
       totalProducts = result?.total ?? products.length
@@ -86,24 +86,24 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   function getPageNumbers(): (number | 'ellipsis')[] {
     const pages: (number | 'ellipsis')[] = []
     const maxVisiblePages = 5
-    
+
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) pages.push(i)
     } else {
       pages.push(1)
-      
+
       if (currentPage > 3) pages.push('ellipsis')
-      
+
       const start = Math.max(2, currentPage - 1)
       const end = Math.min(totalPages - 1, currentPage + 1)
-      
+
       for (let i = start; i <= end; i++) pages.push(i)
-      
+
       if (currentPage < totalPages - 2) pages.push('ellipsis')
-      
+
       pages.push(totalPages)
     }
-    
+
     return pages
   }
 
@@ -181,12 +181,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             {currentPage > 1 ? (
               <Link href={buildPageUrl(currentPage - 1)} aria-label="Go to previous page">
                 <ChevronLeft className="h-4 w-4" />
-                <span className="sr-only sm:not-sr-only sm:ml-1">Previous</span>
+                <span className="sr-only">Previous</span>
               </Link>
             ) : (
               <span>
                 <ChevronLeft className="h-4 w-4" />
-                <span className="sr-only sm:not-sr-only sm:ml-1">Previous</span>
+                <span className="sr-only">Previous</span>
               </span>
             )}
           </Button>
@@ -232,12 +232,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           >
             {currentPage < totalPages ? (
               <Link href={buildPageUrl(currentPage + 1)} aria-label="Go to next page">
-                <span className="sr-only sm:not-sr-only sm:mr-1">Next</span>
+                <span className="sr-only">Next</span>
                 <ChevronRight className="h-4 w-4" />
               </Link>
             ) : (
               <span>
-                <span className="sr-only sm:not-sr-only sm:mr-1">Next</span>
+                <span className="sr-only">Next</span>
                 <ChevronRight className="h-4 w-4" />
               </span>
             )}
