@@ -15,6 +15,12 @@ async function getStoreConfig(): Promise<StoreConfig | null> {
   }
 }
 
+async function getCurrentYear(): Promise<number> {
+  'use cache'
+  cacheLife('days')
+  return new Date().getFullYear()
+}
+
 function VercelLogo({ className }: { className?: string }) {
   return (
     <svg
@@ -36,9 +42,9 @@ const footerLinks = [
 
 export async function Footer() {
   const config = await getStoreConfig()
+  const currentYear = await getCurrentYear()
 
   const socialLinks = config?.socialLinks
-  const currentYear = new Date().getFullYear()
 
   return (
     <footer className="border-t border-zinc-800 bg-black">
