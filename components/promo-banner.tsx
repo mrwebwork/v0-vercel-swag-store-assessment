@@ -2,7 +2,7 @@ import { connection } from 'next/server'
 import { fetchPromotion } from '@/lib/api'
 
 export default async function PromoBanner() {
-  // This must never be cached - the API returns a random promo each time
+  // never be cached, API returns a random promo each request
   await connection()
 
   const promotion = await fetchPromotion()
@@ -24,7 +24,7 @@ export default async function PromoBanner() {
   const hasDateRange = startDate && endDate
 
   return (
-    <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 py-3">
+    <div className="bg-linear-to-r from-blue-600 via-blue-500 to-cyan-500 py-3">
       <div className="container mx-auto px-4">
         <div className="flex flex-col items-center justify-center gap-2 text-center sm:flex-row sm:gap-4">
           <div className="flex items-center gap-3">
