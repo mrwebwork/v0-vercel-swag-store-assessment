@@ -31,13 +31,13 @@ export default function SearchBar({ defaultValue = '' }: SearchBarProps) {
 
   const handleChange = (newValue: string) => {
     setValue(newValue)
-    
+
     // Clear existing timer
     if (debounceTimer) {
       clearTimeout(debounceTimer)
     }
 
-    // If query is >= 3 chars, debounce search
+    // Users query less than 3 chars, debounce search
     if (newValue.length >= 3) {
       const timer = setTimeout(() => {
         updateSearch(newValue)
