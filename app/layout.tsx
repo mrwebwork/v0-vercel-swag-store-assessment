@@ -5,6 +5,7 @@ import { AxiomWebVitals } from 'next-axiom'
 import { CartProvider } from '@/context/cart-context'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
+import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
 const _geist = Geist({ subsets: ['latin'] })
@@ -91,6 +92,7 @@ export default function RootLayout({
             <Footer />
           </div>
         </CartProvider>
+        <Toaster position="bottom-right" richColors closeButton />
         <Analytics />
         <AxiomWebVitals />
       </body>

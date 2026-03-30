@@ -1,8 +1,17 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { Stock } from '@/types'
 import { getStockAction } from '@/lib/cart-actions'
+
+// Helper to detect stale server action errors (deployment mismatch)
+function isStaleServerActionError(error: unknown): boolean {
+  if (error instanceof Error) {
+    return error.message.includes('Failed to find Server Action') || 
+           error.message.includes('was not found on the server')
+  }
+  return false
+}
 
 interface UseProductStockOptions {
   /** Product ID to fetch stock for */
@@ -41,8 +50,21 @@ export function useProductStock({
       const stockData = await getStockAction(productId)
       setStock(stockData)
     } catch (error) {
-      console.error('Failed to load stock:', error)
-      // Default to out of stock on error for safety
+      // Handle stale server action errors by reloading the page
+      if (isStaleServerActionError(error)) {
+        // Only reload if we haven't tried recently (prevent infinite reload loops)
+        if (typeof window !== 'undefined') {
+          const lastReload = sessionStorage.getItem('stock-reload-timestamp')
+          const now = Date.now()
+          if (!lastReload || now - parseInt(lastReload, 10) > 5000) {
+            sessionStorage.setItem('stock-reload-timestamp', now.toString())
+            window.location.reload()
+            return
+          }
+        }
+      }
+      
+      // Default to out of stock on error for safety (silent fail for non-critical data)
       setStock({ productId, stock: 0, inStock: false, lowStock: false })
     } finally {
       setIsLoading(false)

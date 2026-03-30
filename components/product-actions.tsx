@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useCart } from '@/context/cart-context'
 import { useProductStock } from '@/hooks/use-product-stock'
 import { QuantitySelector } from '@/components/quantity-selector'
 import { AddToCartButton } from '@/components/add-to-cart-button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { toast } from 'sonner'
 
 interface ProductActionsProps {
   productId: string
@@ -16,12 +17,35 @@ export function ProductActions({ productId, productName }: ProductActionsProps) 
   const { addItem } = useCart()
   const [quantity, setQuantity] = useState(1)
   const { stock, isLoading: loadingStock, isOutOfStock } = useProductStock({ productId })
+  const isAddingRef = useRef(false)
 
-  // Reset quantity to 1 after successful add
+  // Handle add to cart with quantity reset and toast notification
   const handleAddToCart = useCallback(async () => {
-    await addItem(productId, quantity)
-    setQuantity(1)
-  }, [addItem, productId, quantity])
+    // Prevent duplicate rapid clicks
+    if (isAddingRef.current) return
+    isAddingRef.current = true
+    
+    try {
+      const result = await addItem(productId, quantity)
+      
+      if (result.success) {
+        toast.success('Added to cart', {
+          description: `${quantity} x ${productName} ${quantity === 1 ? 'has' : 'have'} been added to your cart`,
+          duration: 2500,
+        })
+        setQuantity(1)
+      } else if (result.error && !result.error.includes('already in progress')) {
+        toast.error('Failed to add to cart', {
+          description: result.error,
+          duration: 3000,
+        })
+      }
+    } finally {
+      setTimeout(() => {
+        isAddingRef.current = false
+      }, 300)
+    }
+  }, [addItem, productId, productName, quantity])
 
   const maxQuantity = stock?.stock ?? 99
 

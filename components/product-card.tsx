@@ -17,7 +17,11 @@ type ProductCardProps = {
 
 export default function ProductCard({ product, isPriority = false }: ProductCardProps) {
   const { stock, isLoading: loadingStock } = useProductStock({ productId: product.id })
-  const { addToCart } = useAddToCart({ productId: product.id, quantity: 1 })
+  const { addToCart } = useAddToCart({ 
+    productId: product.id, 
+    productName: product.name,
+    quantity: 1,
+  })
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50 transition-all duration-300 hover:border-zinc-700 hover:shadow-lg hover:shadow-black/20">

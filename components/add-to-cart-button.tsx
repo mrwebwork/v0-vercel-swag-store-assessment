@@ -13,8 +13,12 @@ type ButtonState = 'idle' | 'loading' | 'success' | 'out-of-stock'
 interface AddToCartButtonProps {
   /** Current stock quantity - button disabled when <= 0 */
   stockQuantity: number
-  /** Callback when the button is clicked - must add exactly one product per invocation */
-  onAddToCart: () => void | Promise<void>
+  /** 
+   * Callback when the button is clicked. 
+   * Can return boolean to indicate success (true) or failure (false).
+   * If void is returned, success is assumed.
+   */
+  onAddToCart: () => void | boolean | Promise<void> | Promise<boolean>
   /** Optional loading state from parent */
   isLoading?: boolean
   /** Optional custom class names */
@@ -75,14 +79,22 @@ export function AddToCartButton({
 
     startTransition(async () => {
       try {
-        await onAddToCart()
-        setShowSuccess(true)
+        // onAddToCart may return boolean success status or void
+        const result = await onAddToCart()
         
-        // Schedule reset back to idle state
-        resetTimeoutRef.current = setTimeout(() => {
-          setShowSuccess(false)
-          resetTimeoutRef.current = null
-        }, SUCCESS_RESET_DELAY)
+        // Only show success state if the add was successful
+        // If result is undefined (void), assume success for backwards compatibility
+        const wasSuccessful = result === undefined || result === true
+        
+        if (wasSuccessful) {
+          setShowSuccess(true)
+          
+          // Schedule reset back to idle state
+          resetTimeoutRef.current = setTimeout(() => {
+            setShowSuccess(false)
+            resetTimeoutRef.current = null
+          }, SUCCESS_RESET_DELAY)
+        }
       } catch (error) {
         console.error('Failed to add to cart:', error)
       }
