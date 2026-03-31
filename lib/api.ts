@@ -103,6 +103,7 @@ async function instrumentedFetch(
 }
 
 // ─── Products ───────────────────────────────────────────────
+// Fetch product listings with optional filters and pagination
 
 type FetchProductsParams = {
   featured?: boolean
