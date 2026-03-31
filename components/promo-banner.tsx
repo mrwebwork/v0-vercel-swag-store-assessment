@@ -11,7 +11,7 @@ export default async function PromoBanner() {
     return null
   }
 
-  // Safely format dates - only show if valid
+  // Valid Date Hanlding
   function formatDate(dateStr: string | undefined | null): string | null {
     if (!dateStr) return null
     const d = new Date(dateStr)

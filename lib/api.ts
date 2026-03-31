@@ -57,7 +57,6 @@ async function instrumentedFetch(
         method,
         path,
         endpoint: logMeta.endpoint ?? 'unknown',
-        timestamp: new Date().toISOString(),
         durationMs,
         status: response.status,
         success: true,
@@ -71,7 +70,6 @@ async function instrumentedFetch(
         method,
         path,
         endpoint: logMeta.endpoint ?? 'unknown',
-        timestamp: new Date().toISOString(),
         durationMs,
         status: response.status,
         success: false,
@@ -93,7 +91,6 @@ async function instrumentedFetch(
       method,
       path,
       endpoint: logMeta.endpoint ?? 'unknown',
-      timestamp: new Date().toISOString(),
       durationMs,
       success: false,
       errorCode: 'NETWORK_ERROR',
@@ -106,6 +103,7 @@ async function instrumentedFetch(
 }
 
 // ─── Products ───────────────────────────────────────────────
+// Fetch product listings with optional filters and pagination
 
 type FetchProductsParams = {
   featured?: boolean
@@ -223,6 +221,64 @@ export async function fetchProductStock(idOrSlug: string): Promise<Stock> {
 
   const json = await response.json()
   return json?.data ?? json
+}
+
+/**
+ * Batch fetch stock for multiple products with concurrency limiting.
+ * Uses chunked batching to avoid overwhelming the API with too many concurrent requests.
+ * Eliminates N+1 round-trips by fetching all stock data server-side.
+ */
+export async function fetchProductsStock(
+  productIds: string[],
+  concurrencyLimit: number = 5
+): Promise<Map<string, Stock>> {
+  const stockMap = new Map<string, Stock>()
+  
+  if (productIds.length === 0) return stockMap
+
+  const getElapsed = startTimer()
+  
+  // Process in chunks to avoid overwhelming the API
+  const chunks: string[][] = []
+  for (let i = 0; i < productIds.length; i += concurrencyLimit) {
+    chunks.push(productIds.slice(i, i + concurrencyLimit))
+  }
+
+  // Process each chunk sequentially, but requests within a chunk run in parallel
+  for (const chunk of chunks) {
+    const results = await Promise.allSettled(
+      chunk.map(id => fetchProductStock(id))
+    )
+
+    results.forEach((result, index) => {
+      const productId = chunk[index]
+      if (result.status === 'fulfilled') {
+        stockMap.set(productId, result.value)
+      } else {
+        // Default to out-of-stock on error for safety
+        stockMap.set(productId, {
+          productId,
+          stock: 0,
+          inStock: false,
+          lowStock: false,
+        })
+      }
+    })
+  }
+
+  emitLog({
+    level: 'info',
+    service: 'swag-store-api',
+    category: 'api_request',
+    method: 'GET',
+    path: '/api/products/*/stock (batch)',
+    endpoint: 'getBatchProductStock',
+    durationMs: getElapsed(),
+    success: true,
+    params: { count: productIds.length, chunks: chunks.length, concurrency: concurrencyLimit },
+  })
+
+  return stockMap
 }
 
 // ─── Promotions ─────────────────────────────────────────────

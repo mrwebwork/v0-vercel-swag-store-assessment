@@ -49,7 +49,7 @@ function CartBadge() {
 
 const navLinks = [
   { href: '/', label: 'Home' },
-  { href: '/search', label: 'Shop' },
+  { href: '/search', label: 'Search' },
 ]
 
 export function Header() {
