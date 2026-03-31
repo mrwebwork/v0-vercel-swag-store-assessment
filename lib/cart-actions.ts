@@ -36,7 +36,7 @@ async function refreshCartTokenExpiry(token: string): Promise<void> {
     durationMs: 0,
     success: true,
     cartTokenPresent: true,
-    cartAction: 'refresh_expiry',
+    cartAction: 'create',
     params: { maxAge: CART_TOKEN_MAX_AGE },
   })
 }
@@ -123,7 +123,7 @@ export async function getCartAction(): Promise<Cart | null> {
       durationMs: 0,
       success: true,
       cartTokenPresent: false,
-      cartAction: 'read',
+      cartAction: 'update',
     })
     return null
   }
