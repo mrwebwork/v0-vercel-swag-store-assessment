@@ -20,7 +20,9 @@ export const metadata: Metadata = {
 }
 
 const MAX_ITEMS_PER_PAGE = 100
-const DEFAULT_ITEMS_PER_PAGE = 20
+// 12 products = 3 full rows on 4-column desktop grid — natural visual breakpoint
+// Reduces HTML payload from ~130KB to ~80KB per page
+const DEFAULT_ITEMS_PER_PAGE = 12
 
 interface SearchPageProps {
   searchParams: Promise<{ q?: string; category?: string; page?: string }>
@@ -49,7 +51,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   async function getBrowseProducts(
     category?: string,
     page: number = 1,
-    limit: number = 20
+    limit: number = DEFAULT_ITEMS_PER_PAGE
   ) {
     'use cache'
     cacheLife('hours')
