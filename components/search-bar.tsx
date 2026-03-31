@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition, useCallback } from 'react'
+import { useState, useEffect, useTransition, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Search, X, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -15,7 +15,8 @@ export default function SearchBar({ defaultValue = '' }: SearchBarProps) {
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
   const [value, setValue] = useState(defaultValue)
-  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null)
+  // useRef instead of useState to avoid re-renders on timer changes
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   const updateSearch = useCallback((query: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -33,16 +34,15 @@ export default function SearchBar({ defaultValue = '' }: SearchBarProps) {
     setValue(newValue)
 
     // Clear existing timer
-    if (debounceTimer) {
-      clearTimeout(debounceTimer)
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
     }
 
-    // Users query less than 3 chars, debounce search after 3 seconds
+    // Debounce search after 300ms (per spec requirement)
     if (newValue.length >= 3) {
-      const timer = setTimeout(() => {
+      debounceTimerRef.current = setTimeout(() => {
         updateSearch(newValue)
       }, 300)
-      setDebounceTimer(timer)
     } else if (newValue.length < 3 && defaultValue && defaultValue.length >= 3) {
       // Was searching, now cleared below threshold
       updateSearch('')
@@ -52,9 +52,9 @@ export default function SearchBar({ defaultValue = '' }: SearchBarProps) {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault()
-      if (debounceTimer) {
-        clearTimeout(debounceTimer)
-        setDebounceTimer(null)
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+        debounceTimerRef.current = null
       }
       if (value.length >= 3) {
         updateSearch(value)
@@ -63,9 +63,9 @@ export default function SearchBar({ defaultValue = '' }: SearchBarProps) {
   }
 
   const handleSearchClick = () => {
-    if (debounceTimer) {
-      clearTimeout(debounceTimer)
-      setDebounceTimer(null)
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+      debounceTimerRef.current = null
     }
     if (value.length >= 3) {
       updateSearch(value)
@@ -74,9 +74,9 @@ export default function SearchBar({ defaultValue = '' }: SearchBarProps) {
 
   const handleClear = () => {
     setValue('')
-    if (debounceTimer) {
-      clearTimeout(debounceTimer)
-      setDebounceTimer(null)
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+      debounceTimerRef.current = null
     }
     updateSearch('')
   }
@@ -84,11 +84,11 @@ export default function SearchBar({ defaultValue = '' }: SearchBarProps) {
   // Cleanup timer on unmount
   useEffect(() => {
     return () => {
-      if (debounceTimer) {
-        clearTimeout(debounceTimer)
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
       }
     }
-  }, [debounceTimer])
+  }, [])
 
   // Sync value with URL on navigation
   useEffect(() => {

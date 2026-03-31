@@ -7,17 +7,29 @@ import { QuantitySelector } from '@/components/quantity-selector'
 import { AddToCartButton } from '@/components/add-to-cart-button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
+import type { Stock } from '@/types'
 
 interface ProductActionsProps {
   productId: string
   productName: string
+  /** Pre-fetched stock data from server to eliminate duplicate API calls */
+  initialStock?: Stock | null
 }
 
-export function ProductActions({ productId, productName }: ProductActionsProps) {
+export function ProductActions({ productId, productName, initialStock }: ProductActionsProps) {
   const { addItem } = useCart()
   const [quantity, setQuantity] = useState(1)
-  const { stock, isLoading: loadingStock, isOutOfStock } = useProductStock({ productId })
+  // Skip client-side fetch if initialStock is provided (server-side optimization)
+  const { stock: fetchedStock, isLoading: loadingStock, isOutOfStock: fetchedOutOfStock } = useProductStock({ 
+    productId, 
+    fetchOnMount: !initialStock // Only fetch if no initial data
+  })
   const isAddingRef = useRef(false)
+  
+  // Use server-provided stock if available, fall back to client-fetched
+  const stock = initialStock ?? fetchedStock
+  const isOutOfStock = initialStock ? !initialStock.inStock : fetchedOutOfStock
+  const isLoading = !initialStock && loadingStock
 
   // Handle add to cart with quantity reset and toast notification
   const handleAddToCart = useCallback(async () => {
@@ -52,7 +64,7 @@ export function ProductActions({ productId, productName }: ProductActionsProps) 
   return (
     <div className="space-y-4">
       {/* Quantity Selector */}
-      {loadingStock ? (
+      {isLoading ? (
         <Skeleton className="h-10 w-32 rounded-md" />
       ) : (
         !isOutOfStock && (
@@ -65,7 +77,7 @@ export function ProductActions({ productId, productName }: ProductActionsProps) 
       )}
 
       {/* Add to Cart Button */}
-      {loadingStock ? (
+      {isLoading ? (
         <Skeleton className="h-10 w-full rounded-md" />
       ) : (
         <AddToCartButton

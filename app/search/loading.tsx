@@ -14,9 +14,9 @@ export default function SearchLoading() {
         <div className="h-11 w-full animate-pulse rounded-lg bg-zinc-800 sm:w-[200px]" />
       </div>
 
-      {/* Product Grid Skeleton */}
-      <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {Array.from({ length: 10 }).map((_, i) => (
+      {/* Product Grid Skeleton - must match search/page.tsx grid exactly to prevent CLS */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+        {Array.from({ length: 12 }).map((_, i) => (
           <div
             key={i}
             className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50"

@@ -1,14 +1,22 @@
 import { connection } from 'next/server'
 import { fetchProductStock } from '@/lib/api'
+import type { Stock } from '@/types'
 
 interface StockIndicatorProps {
   productId: string
+  /** Pre-fetched stock data to avoid duplicate API calls */
+  initialStock?: Stock | null
 }
 
-export async function StockIndicator({ productId }: StockIndicatorProps) {
-  await connection()
-  
-  const stock = await fetchProductStock(productId)
+export async function StockIndicator({ productId, initialStock }: StockIndicatorProps) {
+  // Use pre-fetched stock if available, otherwise fetch dynamically
+  let stock: Stock
+  if (initialStock) {
+    stock = initialStock
+  } else {
+    await connection()
+    stock = await fetchProductStock(productId)
+  }
 
   if (!stock.inStock) {
     return (
