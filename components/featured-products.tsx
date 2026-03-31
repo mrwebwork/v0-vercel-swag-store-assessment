@@ -30,9 +30,9 @@ export default async function FeaturedProducts() {
 
   if (!products || products.length === 0) {
     return (
-      <div className="py-12 text-center text-neutral-400">
+        <div className="py-12 text-center text-neutral-400">
         No featured products available at the moment.
-      </div>
+        </div>
     )
   }
 

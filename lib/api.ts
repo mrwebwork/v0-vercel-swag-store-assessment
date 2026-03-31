@@ -226,33 +226,47 @@ export async function fetchProductStock(idOrSlug: string): Promise<Stock> {
 }
 
 /**
- * Batch fetch stock for multiple products using Promise.allSettled
- * Eliminates N+1 round-trips by fetching all stock data in parallel server-side
+ * Batch fetch stock for multiple products with concurrency limiting.
+ * Uses chunked batching to avoid overwhelming the API with too many concurrent requests.
+ * Eliminates N+1 round-trips by fetching all stock data server-side.
  */
-export async function fetchProductsStock(productIds: string[]): Promise<Map<string, Stock>> {
+export async function fetchProductsStock(
+  productIds: string[],
+  concurrencyLimit: number = 5
+): Promise<Map<string, Stock>> {
   const stockMap = new Map<string, Stock>()
   
   if (productIds.length === 0) return stockMap
 
   const getElapsed = startTimer()
-  const results = await Promise.allSettled(
-    productIds.map(id => fetchProductStock(id))
-  )
+  
+  // Process in chunks to avoid overwhelming the API
+  const chunks: string[][] = []
+  for (let i = 0; i < productIds.length; i += concurrencyLimit) {
+    chunks.push(productIds.slice(i, i + concurrencyLimit))
+  }
 
-  results.forEach((result, index) => {
-    const productId = productIds[index]
-    if (result.status === 'fulfilled') {
-      stockMap.set(productId, result.value)
-    } else {
-      // Default to out-of-stock on error for safety
-      stockMap.set(productId, {
-        productId,
-        stock: 0,
-        inStock: false,
-        lowStock: false,
-      })
-    }
-  })
+  // Process each chunk sequentially, but requests within a chunk run in parallel
+  for (const chunk of chunks) {
+    const results = await Promise.allSettled(
+      chunk.map(id => fetchProductStock(id))
+    )
+
+    results.forEach((result, index) => {
+      const productId = chunk[index]
+      if (result.status === 'fulfilled') {
+        stockMap.set(productId, result.value)
+      } else {
+        // Default to out-of-stock on error for safety
+        stockMap.set(productId, {
+          productId,
+          stock: 0,
+          inStock: false,
+          lowStock: false,
+        })
+      }
+    })
+  }
 
   emitLog({
     level: 'info',
@@ -264,7 +278,7 @@ export async function fetchProductsStock(productIds: string[]): Promise<Map<stri
     timestamp: new Date().toISOString(),
     durationMs: getElapsed(),
     success: true,
-    params: { count: productIds.length },
+    params: { count: productIds.length, chunks: chunks.length, concurrency: concurrencyLimit },
   })
 
   return stockMap
