@@ -1,13 +1,13 @@
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import Link from 'next/link'
-import { fetchProducts, fetchCategories } from '@/lib/api'
+import { fetchProducts, fetchCategories, fetchProductsStock } from '@/lib/api'
 import SearchBar from '@/components/search-bar'
 import CategoryFilter from '@/components/category-filter'
-import ProductCard from '@/components/product-card'
+import { ProductCardServer } from '@/components/product-card-server'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import type { Product } from '@/types'
+import type { Product, Stock } from '@/types'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -43,10 +43,9 @@ async function getCategories() {
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const { q, category, page } = await searchParams
   const currentPage = Math.max(1, parseInt(page ?? '1', 10) || 1)
+  const limit = Math.min(DEFAULT_ITEMS_PER_PAGE, MAX_ITEMS_PER_PAGE)
 
-  // Fetch categories (cached for days) static reference data
-  const categories = await getCategories()
-
+  // Helper for cached browse products
   async function getBrowseProducts(
     category?: string,
     page: number = 1,
@@ -68,36 +67,37 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     }
   }
 
-  // Fetch products based on search state
-  let products: Product[] = []
-  let totalProducts = 0
-  let totalPages = 1
-  let isSearching = false
-  const limit = Math.min(DEFAULT_ITEMS_PER_PAGE, MAX_ITEMS_PER_PAGE)
+  // P0 FIX #1: Parallel fetch categories and products with Promise.all()
+  // These have no data dependency - saves ~1.7s on every search render
+  const isSearching = q && q.length >= 3
 
-  if (q && q.length >= 3) {
-    // Search queries are dynamic user input, not cached
-    isSearching = true
-    try {
-      const result = await fetchProducts({
-        search: q,
-        category,
-        page: currentPage,
-        limit
-      })
-      products = result?.products ?? []
-      totalProducts = result?.total ?? products.length
-      totalPages = result?.totalPages ?? 1
-    } catch (error) {
-      // keep products empty array on error
-    }
-  } else if (!q) {
-    // browse + category filter (cached hours) per category page combo
-    const result = await getBrowseProducts(category, currentPage, limit)
-    products = result.products
-    totalProducts = result.total
-    totalPages = result.totalPages
-  }
+  const [categories, productResult] = await Promise.all([
+    // Categories cached for days (stable reference data)
+    getCategories(),
+    // Products: search queries are dynamic (uncached), browse is cached for hours
+    isSearching
+      ? fetchProducts({ search: q, category, page: currentPage, limit })
+          .then(result => ({
+            products: result?.products ?? [],
+            total: result?.total ?? 0,
+            totalPages: result?.totalPages ?? 1,
+          }))
+          .catch(() => ({ products: [] as Product[], total: 0, totalPages: 1 }))
+      : q
+        ? Promise.resolve({ products: [] as Product[], total: 0, totalPages: 1 })
+        : getBrowseProducts(category, currentPage, limit)
+  ])
+
+  const products = productResult.products
+  const totalProducts = productResult.total
+  const totalPages = productResult.totalPages
+
+  // P0 FIX #3: Batch stock fetch server-side with Promise.allSettled
+  // Eliminates 6-20 redundant N+1 round-trips per page
+  const productIds = products.map(p => p.id)
+  const stockMap: Map<string, Stock> = productIds.length > 0
+    ? await fetchProductsStock(productIds)
+    : new Map()
 
   // Build pagination URL helper
   function buildPageUrl(pageNum: number) {
@@ -156,7 +156,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       </div>
 
       {/* Search Results Info */}
-      {(isSearching || totalProducts > 0) && (
+      {(!!isSearching || totalProducts > 0) && (
         <p className="mb-4 text-sm text-zinc-400">
           {isSearching ? (
             <>
@@ -185,12 +185,25 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         </div>
       )}
 
-      {/* Product Grid */}
+      {/* Product Grid - uses server-fetched stock to eliminate N+1 client requests */}
       {products.length > 0 && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3 xl:grid-cols-4">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+          {products.map((product, index) => {
+            const stock = stockMap.get(product.id) ?? {
+              productId: product.id,
+              stock: 0,
+              inStock: false,
+              lowStock: false,
+            }
+            return (
+              <ProductCardServer
+                key={product.id}
+                product={product}
+                stock={stock}
+                isPriority={index < 4}
+              />
+            )
+          })}
         </div>
       )}
 

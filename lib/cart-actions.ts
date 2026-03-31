@@ -4,7 +4,7 @@ import 'server-only'
 import { cookies } from 'next/headers'
 import { createCart, addToCart, updateCartItem, removeCartItem, getCart, fetchProductStock } from './api'
 import { emitLog, startTimer } from './logger'
-import type { Cart } from '@/types'
+import type { Cart, Stock } from '@/types'
 
 const CART_TOKEN_COOKIE = 'cart-token'
 
@@ -234,4 +234,13 @@ export async function removeCartItemAction(itemId: string): Promise<Cart> {
 
 export async function getStockAction(productId: string) {
   return fetchProductStock(productId)
+}
+
+/**
+ * Batch fetch stock for multiple products server-side
+ * Use this in server components to eliminate N+1 client-side requests
+ */
+export async function getBatchStockAction(productIds: string[]): Promise<Map<string, Stock>> {
+  const { fetchProductsStock } = await import('./api')
+  return fetchProductsStock(productIds)
 }

@@ -225,6 +225,51 @@ export async function fetchProductStock(idOrSlug: string): Promise<Stock> {
   return json?.data ?? json
 }
 
+/**
+ * Batch fetch stock for multiple products using Promise.allSettled
+ * Eliminates N+1 round-trips by fetching all stock data in parallel server-side
+ */
+export async function fetchProductsStock(productIds: string[]): Promise<Map<string, Stock>> {
+  const stockMap = new Map<string, Stock>()
+  
+  if (productIds.length === 0) return stockMap
+
+  const getElapsed = startTimer()
+  const results = await Promise.allSettled(
+    productIds.map(id => fetchProductStock(id))
+  )
+
+  results.forEach((result, index) => {
+    const productId = productIds[index]
+    if (result.status === 'fulfilled') {
+      stockMap.set(productId, result.value)
+    } else {
+      // Default to out-of-stock on error for safety
+      stockMap.set(productId, {
+        productId,
+        stock: 0,
+        inStock: false,
+        lowStock: false,
+      })
+    }
+  })
+
+  emitLog({
+    level: 'info',
+    service: 'swag-store-api',
+    category: 'api_request',
+    method: 'GET',
+    path: '/api/products/*/stock (batch)',
+    endpoint: 'getBatchProductStock',
+    timestamp: new Date().toISOString(),
+    durationMs: getElapsed(),
+    success: true,
+    params: { count: productIds.length },
+  })
+
+  return stockMap
+}
+
 // ─── Promotions ─────────────────────────────────────────────
 
 export async function fetchPromotion(): Promise<Promotion | null> {
