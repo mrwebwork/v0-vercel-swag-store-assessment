@@ -24,7 +24,7 @@ const MAX_ITEMS_PER_PAGE = 100
 const DEFAULT_ITEMS_PER_PAGE = 12
 
 interface SearchPageProps {
-  searchParams: Promise<{ q?: string; category?: string; page?: string }>
+  searchParams: Promise<{ q?: string; category?: string; page?: string; featured?: string }>
 }
 
 async function getCategories() {
@@ -42,22 +42,31 @@ async function getCategories() {
 }
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
-  const { q, category, page } = await searchParams
+  const { q, category, page, featured } = await searchParams
   const currentPage = Math.max(1, parseInt(page ?? '1', 10) || 1)
   const limit = Math.min(DEFAULT_ITEMS_PER_PAGE, MAX_ITEMS_PER_PAGE)
+  
+  // Normalize featured to boolean — undefined means "show all products"
+  const isFeatured = featured === 'true'
 
   // Helper for cached browse products
   async function getBrowseProducts(
     category?: string,
     page: number = 1,
-    limit: number = DEFAULT_ITEMS_PER_PAGE
+    limit: number = DEFAULT_ITEMS_PER_PAGE,
+    featured?: boolean
   ) {
     'use cache'
     cacheLife('hours')
-    cacheTag('products', ...(category ? [`category-${category}`] : []))
+    cacheTag('products', ...(category ? [`category-${category}`] : []), ...(featured ? ['featured'] : []))
 
     try {
-      const result = await fetchProducts({ category, page, limit })
+      const result = await fetchProducts({ 
+        category, 
+        page, 
+        limit, 
+        featured: featured || undefined // undefined = no filter, true = featured only
+      })
       return {
         products: result?.products ?? [],
         total: result?.total ?? 0,
@@ -77,7 +86,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     getCategories(),
     // Products: search queries are dynamic (uncached), browse is cached for hours
     isSearching
-      ? fetchProducts({ search: q, category, page: currentPage, limit })
+      ? fetchProducts({ 
+          search: q, 
+          category, 
+          featured: isFeatured || undefined, // Pass through featured filter
+          page: currentPage, 
+          limit 
+        })
           .then(result => ({
             products: result?.products ?? [],
             total: result?.total ?? 0,
@@ -86,7 +101,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           .catch(() => ({ products: [] as Product[], total: 0, totalPages: 1 }))
       : q
         ? Promise.resolve({ products: [] as Product[], total: 0, totalPages: 1 })
-        : getBrowseProducts(category, currentPage, limit)
+        : getBrowseProducts(category, currentPage, limit, isFeatured || undefined)
   ])
 
   const products = productResult.products
@@ -100,11 +115,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     ? await fetchProductsStock(productIds)
     : new Map()
 
-  // Build pagination URL helper
+  // Build pagination URL helper — preserves all active filters
   function buildPageUrl(pageNum: number) {
     const params = new URLSearchParams()
     if (q) params.set('q', q)
     if (category) params.set('category', category)
+    if (isFeatured) params.set('featured', 'true')
     if (pageNum > 1) params.set('page', String(pageNum))
     const queryString = params.toString()
     return `/search${queryString ? `?${queryString}` : ''}`
@@ -138,22 +154,34 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <h1 className="mb-2 text-3xl font-bold tracking-tight text-white">
-        Shop All Products
+        {isFeatured ? 'Featured Products' : 'Shop All Products'}
       </h1>
       <p className="mb-8 text-zinc-400">
-        Browse and search our collection of Vercel merchandise
+        {isFeatured
+          ? 'Hand-picked favorites from our collection'
+          : 'Browse and search our collection of Vercel merchandise'}
       </p>
 
       {/* Search Controls */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="flex-1">
           <Suspense fallback={<SearchBarSkeleton />}>
             <SearchBar defaultValue={q} />
           </Suspense>
         </div>
-        <Suspense fallback={<CategoryFilterSkeleton />}>
-          <CategoryFilter categories={categories} defaultValue={category} />
-        </Suspense>
+        <div className="flex items-center gap-3">
+          <Suspense fallback={<CategoryFilterSkeleton />}>
+            <CategoryFilter categories={categories} defaultValue={category} />
+          </Suspense>
+          {isFeatured && (
+            <Link
+              href="/search"
+              className="shrink-0 rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-400 transition-colors hover:border-zinc-500 hover:text-white"
+            >
+              Clear featured filter
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Search Results Info */}
@@ -162,11 +190,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           {isSearching ? (
             <>
               {totalProducts} result{totalProducts !== 1 ? 's' : ''} for &ldquo;{q}&rdquo;
+              {isFeatured ? ' in featured products' : ''}
               {category ? ` in ${categories.find(c => c.slug === category)?.name ?? category}` : ''}
             </>
           ) : (
             <>
-              Showing {products.length} of {totalProducts} products
+              Showing {products.length} of {totalProducts}
+              {isFeatured ? ' featured' : ''} products
               {category ? ` in ${categories.find(c => c.slug === category)?.name ?? category}` : ''}
               {totalPages > 1 ? ` (Page ${currentPage} of ${totalPages})` : ''}
             </>

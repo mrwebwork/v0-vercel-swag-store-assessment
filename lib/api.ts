@@ -353,22 +353,43 @@ export async function fetchStoreConfig(): Promise<StoreConfig> {
 
 // ─── Cart ───────────────────────────────────────────────────
 
+/** API cart item shape before normalization */
+interface CartApiItem {
+  productId: string
+  quantity: number
+  lineTotal?: number
+  product?: {
+    name?: string
+    images?: string[]
+    price?: number
+  }
+}
+
+/** API cart response shape before normalization */
+interface CartApiResponse {
+  token?: string
+  items?: CartApiItem[]
+  totalItems?: number
+  subtotal?: number
+  currency?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
 /**
  * Normalize the API cart response into our Cart type.
  * The API returns items as { productId, quantity, product: {...}, lineTotal }
  * We flatten this into our CartItem shape: { id, productId, name, image, price, quantity }
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function normalizeCart(raw: any): Cart {
-  const items: CartItem[] = (raw.items ?? []).map((item: Record<string, unknown>) => {
-    const product = item.product as Record<string, unknown> | undefined
+function normalizeCart(raw: CartApiResponse): Cart {
+  const items: CartItem[] = (raw.items ?? []).map((item) => {
     return {
-      id: (item.productId as string) ?? '',
-      productId: (item.productId as string) ?? '',
-      name: (product?.name as string) ?? 'Unknown Product',
-      image: ((product?.images as string[]) ?? [])[0] ?? '/placeholder.svg',
-      price: (product?.price as number) ?? 0,
-      quantity: (item.quantity as number) ?? 1,
+      id: item.productId ?? '',
+      productId: item.productId ?? '',
+      name: item.product?.name ?? 'Unknown Product',
+      image: (item.product?.images ?? [])[0] ?? '/placeholder.svg',
+      price: item.product?.price ?? 0,
+      quantity: item.quantity ?? 1,
     }
   })
 

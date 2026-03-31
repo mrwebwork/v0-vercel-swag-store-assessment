@@ -2,13 +2,15 @@ import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
+import { connection } from 'next/server'
 import { cacheLife, cacheTag } from 'next/cache'
-import { fetchProduct, fetchProducts } from '@/lib/api'
+import { fetchProduct, fetchProducts, fetchProductStock } from '@/lib/api'
 import { formatPrice, getFirstImage } from '@/lib/utils'
 import { StockIndicator } from '@/components/stock-indicator'
 import { StockIndicatorSkeleton } from '@/components/stock-indicator-skeleton'
 import { ProductActions } from '@/components/product-actions'
 import type { Metadata } from 'next'
+import type { Stock } from '@/types'
 
 interface ProductPageProps {
   params: Promise<{ param: string }>
@@ -64,6 +66,16 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
   if (!product) {
     notFound()
+  }
+
+  // Force dynamic rendering for stock data, then fetch it server-side
+  // This eliminates the double stock fetch (RSC + client-side hook)
+  await connection()
+  let stock: Stock | null = null
+  try {
+    stock = await fetchProductStock(product.id)
+  } catch {
+    // Fall back to null stock, ProductActions will handle gracefully
   }
 
   return (
@@ -122,13 +134,17 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             {product.description}
           </p>
 
-          {/* Stock Indicator - DYNAMIC, wrapped in Suspense */}
-          <Suspense fallback={<StockIndicatorSkeleton />}>
-            <StockIndicator productId={product.id} />
-          </Suspense>
+          {/* Stock Indicator - uses server-fetched stock to prevent duplicate API calls */}
+          {stock ? (
+            <StockIndicator productId={product.id} initialStock={stock} />
+          ) : (
+            <Suspense fallback={<StockIndicatorSkeleton />}>
+              <StockIndicator productId={product.id} />
+            </Suspense>
+          )}
 
-          {/* Product Actions - client component with stock-aware logic */}
-          <ProductActions productId={product.id} productName={product.name} />
+          {/* Product Actions - receives server-fetched stock as prop to eliminate client-side fetch */}
+          <ProductActions productId={product.id} productName={product.name} initialStock={stock} />
 
           {/* Tags - static/cached */}
           {product.tags && product.tags.length > 0 && (
