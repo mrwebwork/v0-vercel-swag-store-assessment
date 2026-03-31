@@ -84,15 +84,6 @@ async function instrumentedFetch(
     const durationMs = getElapsed()
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
 
-    const message = error instanceof Error ? error.message : ''
-  // Token expired or invalid — clear stale cookie
-  if (message.includes('404') || message.includes('401') || message.includes('expired')) {
-    cookieStore.delete(`${CART_TOKEN_COOKIE}`)
-    
-  }
-    return null
-  }
-
     emitLog({
       level: 'error',
       service: 'swag-store-api',
