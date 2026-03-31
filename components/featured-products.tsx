@@ -13,9 +13,13 @@ async function getFeaturedProducts(): Promise<Product[]> {
   try {
     const data = await fetchProducts({ featured: true, limit: 12 })
     let products = data?.products ?? []
+
+    //* Guardrail ensuring API returns only featured products
+    products = products.filter(p => p.featured === true)
+
     // If featured filter returned no results, fall back to all products
     if (products.length === 0) {
-      const fallback = await fetchProducts({ limit: 8 })
+      const fallback = await fetchProducts({ limit: 6 })
       products = fallback?.products ?? []
     }
     return products

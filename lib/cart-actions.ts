@@ -7,6 +7,40 @@ import { emitLog, startTimer } from './logger'
 import type { Cart, Stock } from '@/types'
 
 const CART_TOKEN_COOKIE = 'cart-token'
+const CART_TOKEN_MAX_AGE = 60 * 60 * 24 // 24 hours in seconds
+
+/**
+ * Refreshes the cart token cookie expiry to 24 hours from now.
+ * Called after every successful cart interaction to implement sliding expiration.
+ * This keeps the client cookie and server token expiration aligned:
+ * - Active users get their session extended indefinitely
+ * - Inactive users (24h+) have both cookie and server token expire simultaneously
+ */
+async function refreshCartTokenExpiry(token: string): Promise<void> {
+  const cookieStore = await cookies()
+  cookieStore.set(CART_TOKEN_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: CART_TOKEN_MAX_AGE,
+    path: '/',
+  })
+  
+  emitLog({
+    level: 'info',
+    service: 'swag-store-api',
+    category: 'cart_lifecycle',
+    method: 'COOKIE_REFRESH',
+    path: 'cookie://cart-token',
+    endpoint: 'refreshCartTokenExpiry',
+    timestamp: new Date().toISOString(),
+    durationMs: 0,
+    success: true,
+    cartTokenPresent: true,
+    cartAction: 'refresh_expiry',
+    params: { maxAge: CART_TOKEN_MAX_AGE },
+  })
+}
 
 async function getOrCreateCartToken(): Promise<string> {
   const cookieStore = await cookies()
@@ -31,14 +65,14 @@ async function getOrCreateCartToken(): Promise<string> {
     // Create new cart and log it
     const getElapsed = startTimer()
     try {
+      //* Created cart result
       const result = await createCart()
+
+      //* Cart Token
       token = result.token
-      cookieStore.set(CART_TOKEN_COOKIE, token, {
-        httpOnly: true,
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24, // 24 hours (matches API cart expiry)
-        path: '/',
-      })
+      
+      // Set initial cookie with 24h expiry
+      await refreshCartTokenExpiry(token)
 
       emitLog({
         level: 'info',
@@ -119,6 +153,9 @@ export async function addToCartAction(
   const token = await getOrCreateCartToken()
   const cart = await addToCart(token, productId, quantity)
 
+// Slide the cookie expiration forward — matches API's "24hr of inactivity" behavior
+  await refreshCartTokenExpiry(token)
+
   // Log cache invalidation event
   emitLog({
     level: 'info',
@@ -167,6 +204,9 @@ export async function updateCartItemAction(
 
   const cart = await updateCartItem(token, itemId, quantity)
 
+  // Slide the cookie expiration forward — matches API's "24hr of inactivity" behavior
+  await refreshCartTokenExpiry(token)
+
   // Log cache invalidation event
   emitLog({
     level: 'info',
@@ -211,6 +251,9 @@ export async function removeCartItemAction(itemId: string): Promise<Cart> {
   }
 
   const cart = await removeCartItem(token, itemId)
+
+  // Slide the cookie expiration forward — matches API's "24hr of inactivity" behavior
+  await refreshCartTokenExpiry(token)
 
   // Log cache invalidation event
   emitLog({
