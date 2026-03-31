@@ -37,11 +37,11 @@ export default function SearchBar({ defaultValue = '' }: SearchBarProps) {
       clearTimeout(debounceTimer)
     }
 
-    // Users query less than 3 chars, debounce search
+    // Users query less than 3 chars, debounce search after 3 seconds
     if (newValue.length >= 3) {
       const timer = setTimeout(() => {
         updateSearch(newValue)
-      }, 400)
+      }, 300)
       setDebounceTimer(timer)
     } else if (newValue.length < 3 && defaultValue && defaultValue.length >= 3) {
       // Was searching, now cleared below threshold
