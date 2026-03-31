@@ -302,3 +302,18 @@ function CategoryFilterSkeleton() {
     <div className="h-11 w-full animate-pulse rounded-lg bg-zinc-800 sm:w-[200px]" />
   )
 }
+
+function ProductGridSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="animate-pulse rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+          <div className="aspect-square w-full rounded-lg bg-zinc-800" />
+          <div className="mt-4 h-4 w-3/4 rounded bg-zinc-800" />
+          <div className="mt-2 h-4 w-1/2 rounded bg-zinc-800" />
+          <div className="mt-4 h-10 w-full rounded-lg bg-zinc-800" />
+        </div>
+      ))}
+    </div>
+  )
+}
