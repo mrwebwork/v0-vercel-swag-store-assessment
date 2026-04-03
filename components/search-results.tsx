@@ -1,7 +1,7 @@
 import { cacheLife, cacheTag } from 'next/cache'
 import { connection } from 'next/server'
 import Link from 'next/link'
-import { fetchProducts, fetchProductsStock } from '@/lib/api'
+import { fetchProducts, fetchProductsSearch, fetchProductsStock } from '@/lib/api'
 import { ProductCardServer } from '@/components/product-card-server'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
@@ -52,12 +52,11 @@ export async function SearchResults({ q, category, page, featured, categories }:
   const isFeatured = featured === 'true'
   const isSearching = q && q.length >= 3
 
-  // Fetch products (search is dynamic, browse is cached)
+  // Fetch products (search is dynamic via fetchProductsSearch, browse is cached)
   const productResult = isSearching
-    ? await fetchProducts({
+    ? await fetchProductsSearch({
         search: q,
         category,
-        featured: isFeatured || undefined,
         page: currentPage,
         limit,
       })
