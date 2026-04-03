@@ -182,9 +182,6 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
       {/* Recommended Products - streams in via Suspense */}
       <section className="mt-16 border-t border-zinc-800 pt-12">
-        <h2 className="mb-8 text-2xl font-bold tracking-tight">
-          More from {product.category}
-        </h2>
         <Suspense fallback={<RecommendedProductsSkeleton />}>
           <RecommendedProducts category={product.category} currentProductId={product.id} />
         </Suspense>
