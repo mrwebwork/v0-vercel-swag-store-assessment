@@ -9,6 +9,8 @@ import { formatPrice, getFirstImage } from '@/lib/utils'
 import { StockIndicator } from '@/components/stock-indicator'
 import { StockIndicatorSkeleton } from '@/components/stock-indicator-skeleton'
 import { ProductActions } from '@/components/product-actions'
+import { RecommendedProducts } from '@/components/recommended-products'
+import { RecommendedProductsSkeleton } from '@/components/recommended-products-skeleton'
 import type { Metadata } from 'next'
 import type { Stock } from '@/types'
 
@@ -177,6 +179,16 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
           </div>
         </div>
       </div>
+
+      {/* Recommended Products - streams in via Suspense */}
+      <section className="mt-16 border-t border-zinc-800 pt-12">
+        <h2 className="mb-8 text-2xl font-bold tracking-tight">
+          More from {product.category}
+        </h2>
+        <Suspense fallback={<RecommendedProductsSkeleton />}>
+          <RecommendedProducts category={product.category} currentProductId={product.id} />
+        </Suspense>
+      </section>
     </div>
   )
 }
