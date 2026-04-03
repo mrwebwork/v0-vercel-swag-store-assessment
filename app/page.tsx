@@ -24,10 +24,10 @@ export const metadata = {
 export default function HomePage() {
   return (
     <>
-      <HeroSection />
       <Suspense fallback={<PromoBannerSkeleton />}>
         <PromoBanner />
       </Suspense>
+      <HeroSection />
       <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 md:py-16 lg:px-8">
         <h2 className="mb-8 text-2xl font-bold text-white md:text-3xl">
           Featured Products

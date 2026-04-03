@@ -24,7 +24,7 @@ export default async function PromoBanner() {
   const hasDateRange = startDate && endDate
 
   return (
-    <div className="bg-linear-to-r from-blue-600 via-blue-500 to-cyan-500 py-3">
+    <div className="animate-in fade-in slide-in-from-top-2 duration-300 bg-linear-to-r from-blue-600 via-blue-500 to-cyan-500 py-3">
       <div className="container mx-auto px-4">
         <div className="flex flex-col items-center justify-center gap-2 text-center sm:flex-row sm:gap-4">
           <div className="flex items-center gap-3">
