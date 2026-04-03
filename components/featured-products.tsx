@@ -1,7 +1,8 @@
 import { cacheLife, cacheTag } from 'next/cache'
-import { fetchProducts } from '@/lib/api'
+import { connection } from 'next/server'
+import { fetchProducts, fetchProductsStock } from '@/lib/api'
 import type { Product } from '@/types'
-import ProductGrid from '@/components/product-grid'
+import { ProductCardServer } from '@/components/product-card-server'
 
 // Cached data fetching function
 // Log metadata is passed through fetchProducts to the instrumented fetch
@@ -40,5 +41,26 @@ export default async function FeaturedProducts() {
     )
   }
 
-  return <ProductGrid products={products.slice(0, 12)} />
+  // Signal dynamic rendering before accessing request-time APIs (new Date() in logger)
+  await connection()
+  
+  // Batch fetch stock for all products (dynamic, not cached)
+  const productIds = products.map(p => p.id)
+  const stockMap = productIds.length > 0 ? await fetchProductsStock(productIds) : new Map()
+
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3 lg:gap-8">
+      {products.slice(0, 12).map((product, index) => {
+        const stock = stockMap.get(product.id) ?? { productId: product.id, stock: 0, inStock: false, lowStock: false }
+        return (
+          <ProductCardServer
+            key={product.id}
+            product={product}
+            stock={stock}
+            isPriority={index < 3}
+          />
+        )
+      })}
+    </div>
+  )
 }
