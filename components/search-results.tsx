@@ -9,6 +9,7 @@ import type { Product, Stock, Category } from '@/types'
 
 const MAX_ITEMS_PER_PAGE = 100
 const DEFAULT_ITEMS_PER_PAGE = 12
+const SEARCH_RESULTS_LIMIT = 5
 
 interface SearchResultsProps {
   q?: string
@@ -76,9 +77,13 @@ async function getBrowseProducts(
 
 export async function SearchResults({ q, category, page, featured, categories }: SearchResultsProps) {
   const currentPage = Math.max(1, parseInt(page ?? '1', 10) || 1)
-  const limit = Math.min(DEFAULT_ITEMS_PER_PAGE, MAX_ITEMS_PER_PAGE)
   const isFeatured = featured === 'true'
   const isSearching = q && q.length >= 3
+  
+  // Use 5-result limit for search, 12 for browse
+  const limit = isSearching 
+    ? SEARCH_RESULTS_LIMIT 
+    : Math.min(DEFAULT_ITEMS_PER_PAGE, MAX_ITEMS_PER_PAGE)
 
   // Fetch products (search is cached at 'minutes' for repeat queries, browse at 'hours')
   const productResult = isSearching
@@ -138,7 +143,8 @@ export async function SearchResults({ q, category, page, featured, categories }:
         <p className="mb-4 text-sm text-zinc-400">
           {isSearching ? (
             <>
-              {totalProducts} result{totalProducts !== 1 ? 's' : ''} for &ldquo;{q}&rdquo;
+              {products.length} result{products.length !== 1 ? 's' : ''} for &ldquo;{q}&rdquo;
+              {' '}(showing up to {SEARCH_RESULTS_LIMIT})
               {isFeatured ? ' in featured products' : ''}
               {category ? ` in ${categories.find(c => c.slug === category)?.name ?? category}` : ''}
             </>
@@ -187,8 +193,8 @@ export async function SearchResults({ q, category, page, featured, categories }:
         </div>
       )}
 
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
+      {/* Pagination Controls - only show for browse mode, not search */}
+      {!isSearching && totalPages > 1 && (
         <nav className="mt-12 flex items-center justify-center gap-2" aria-label="Pagination">
           {/* Previous Button */}
           <Button
