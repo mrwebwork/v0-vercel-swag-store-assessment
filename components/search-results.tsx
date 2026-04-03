@@ -18,6 +18,34 @@ interface SearchResultsProps {
   categories: Category[]
 }
 
+// Cached search results function - short TTL for repeat queries within a session
+async function getSearchResults(
+  q: string,
+  category?: string,
+  page: number = 1,
+  limit: number = DEFAULT_ITEMS_PER_PAGE
+) {
+  'use cache'
+  cacheLife('minutes')
+  cacheTag('search-results', `search-${q}`)
+
+  try {
+    const result = await fetchProductsSearch({
+      search: q,
+      category,
+      page,
+      limit,
+    })
+    return {
+      products: result?.products ?? [],
+      total: result?.total ?? 0,
+      totalPages: result?.totalPages ?? 1,
+    }
+  } catch {
+    return { products: [] as Product[], total: 0, totalPages: 1 }
+  }
+}
+
 // Cached browse products function
 async function getBrowseProducts(
   category?: string,
@@ -52,20 +80,9 @@ export async function SearchResults({ q, category, page, featured, categories }:
   const isFeatured = featured === 'true'
   const isSearching = q && q.length >= 3
 
-  // Fetch products (search is dynamic via fetchProductsSearch, browse is cached)
+  // Fetch products (search is cached at 'minutes' for repeat queries, browse at 'hours')
   const productResult = isSearching
-    ? await fetchProductsSearch({
-        search: q,
-        category,
-        page: currentPage,
-        limit,
-      })
-        .then(result => ({
-          products: result?.products ?? [],
-          total: result?.total ?? 0,
-          totalPages: result?.totalPages ?? 1,
-        }))
-        .catch(() => ({ products: [] as Product[], total: 0, totalPages: 1 }))
+    ? await getSearchResults(q, category, currentPage, limit)
     : q
       ? { products: [] as Product[], total: 0, totalPages: 1 }
       : await getBrowseProducts(category, currentPage, limit, isFeatured || undefined)
