@@ -1,10 +1,10 @@
-import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import Link from 'next/link'
 import { fetchCategories } from '@/lib/api'
 import SearchBar from '@/components/search-bar'
 import CategoryFilter from '@/components/category-filter'
 import { SearchResults } from '@/components/search-results'
+import { SearchResultsWrapper } from '@/components/search-results-wrapper'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -71,8 +71,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         </div>
       </div>
 
-      {/* Product Grid - streams in via Suspense */}
-      <Suspense fallback={<SearchResultsSkeleton />}>
+      {/* Product Grid - streams in via Suspense with transition dimming */}
+      <SearchResultsWrapper fallback={<SearchResultsSkeleton />}>
         <SearchResults
           q={q}
           category={category}
@@ -80,7 +80,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           featured={featured}
           categories={categories}
         />
-      </Suspense>
+      </SearchResultsWrapper>
     </div>
   )
 }
