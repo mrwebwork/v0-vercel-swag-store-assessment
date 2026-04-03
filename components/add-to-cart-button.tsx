@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { ShoppingCart, Check, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -43,13 +43,12 @@ export function AddToCartButton({
   lowStockThreshold = 5,
   productName,
 }: AddToCartButtonProps) {
-  const [isPending, startTransition] = useTransition()
   const [showSuccess, setShowSuccess] = useState(false)
   const resetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const isOutOfStock = stockQuantity <= 0
   const isLowStock = stockQuantity > 0 && stockQuantity <= lowStockThreshold
-  const isDisabled = isOutOfStock || isPending || externalLoading || showSuccess
+  const isDisabled = isOutOfStock || externalLoading || showSuccess
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -63,10 +62,10 @@ export function AddToCartButton({
   // Determine current button state
   const getButtonState = useCallback((): ButtonState => {
     if (isOutOfStock) return 'out-of-stock'
-    if (isPending || externalLoading) return 'loading'
+    if (externalLoading) return 'loading'
     if (showSuccess) return 'success'
     return 'idle'
-  }, [isOutOfStock, isPending, externalLoading, showSuccess])
+  }, [isOutOfStock, externalLoading, showSuccess])
 
   const handleClick = useCallback(() => {
     if (isDisabled) return
@@ -77,28 +76,34 @@ export function AddToCartButton({
       resetTimeoutRef.current = null
     }
 
-    startTransition(async () => {
-      try {
-        // onAddToCart may return boolean success status or void
-        const result = await onAddToCart()
-        
-        // Only show success state if the add was successful
-        // If result is undefined (void), assume success for backwards compatibility
-        const wasSuccessful = result === undefined || result === true
-        
+    // Call onAddToCart directly - cart context handles the transition
+    const result = onAddToCart()
+    
+    // Handle both sync and async results
+    if (result instanceof Promise) {
+      result.then((asyncResult) => {
+        const wasSuccessful = asyncResult === undefined || asyncResult === true
         if (wasSuccessful) {
           setShowSuccess(true)
-          
-          // Schedule reset back to idle state
           resetTimeoutRef.current = setTimeout(() => {
             setShowSuccess(false)
             resetTimeoutRef.current = null
           }, SUCCESS_RESET_DELAY)
         }
-      } catch (error) {
+      }).catch((error) => {
         console.error('Failed to add to cart:', error)
+      })
+    } else {
+      // Sync result - show success immediately
+      const wasSuccessful = result === undefined || result === true
+      if (wasSuccessful) {
+        setShowSuccess(true)
+        resetTimeoutRef.current = setTimeout(() => {
+          setShowSuccess(false)
+          resetTimeoutRef.current = null
+        }, SUCCESS_RESET_DELAY)
       }
-    })
+    }
   }, [isDisabled, onAddToCart])
 
   // Generate accessible label based on state

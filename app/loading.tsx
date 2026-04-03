@@ -22,8 +22,8 @@ export default function HomeLoading() {
       {/* Featured Products Section Skeleton */}
       <section className="container mx-auto px-4 py-12 md:py-16">
         <div className="mb-8 h-8 w-48 animate-pulse rounded bg-zinc-800" />
-        <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3 lg:gap-8">
+          {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="overflow-hidden rounded-xl bg-zinc-900">
               <div className="aspect-square animate-pulse bg-zinc-800" />
               <div className="p-4">
