@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { cacheLife, cacheTag } from 'next/cache'
 import type { Product, Stock, Promotion, Category, Cart, CartItem, StoreConfig } from '@/types'
 import { emitLog, startTimer, type ApiLogEntry } from './logger'
 
@@ -121,7 +122,19 @@ type ProductsResponse = {
   totalPages: number
 }
 
-export async function fetchProducts(params?: FetchProductsParams): Promise<ProductsResponse> {
+/**
+ * Cached fetch for browsing/filtering products (no search param).
+ * For search queries, use fetchProductsSearch() instead.
+ */
+export async function fetchProducts(params?: Omit<FetchProductsParams, 'search'>): Promise<ProductsResponse> {
+  'use cache'
+  cacheLife('hours')
+  cacheTag(
+    'products',
+    ...(params?.category ? [`category-${params.category}`] : []),
+    ...(params?.featured ? ['featured-products'] : [])
+  )
+
   const url = new URL(`${API_BASE_URL}/products`)
 
   if (params?.featured !== undefined) {
@@ -129,9 +142,6 @@ export async function fetchProducts(params?: FetchProductsParams): Promise<Produ
   }
   if (params?.category) {
     url.searchParams.set('category', params.category)
-  }
-  if (params?.search) {
-    url.searchParams.set('search', params.search)
   }
   if (params?.page) {
     url.searchParams.set('page', String(params.page))
@@ -151,7 +161,6 @@ export async function fetchProducts(params?: FetchProductsParams): Promise<Produ
       params: {
         featured: params?.featured,
         category: params?.category,
-        search: params?.search,
         page: params?.page,
         limit: params?.limit,
       },
@@ -177,7 +186,61 @@ export async function fetchProducts(params?: FetchProductsParams): Promise<Produ
   }
 }
 
+/**
+ * Uncached fetch for search queries - results should be fresh per request.
+ */
+export async function fetchProductsSearch(params: FetchProductsParams & { search: string }): Promise<ProductsResponse> {
+  const url = new URL(`${API_BASE_URL}/products`)
+
+  url.searchParams.set('search', params.search)
+  if (params.category) {
+    url.searchParams.set('category', params.category)
+  }
+  if (params.page) {
+    url.searchParams.set('page', String(params.page))
+  }
+  if (params.limit) {
+    url.searchParams.set('limit', String(params.limit))
+  }
+
+  const response = await instrumentedFetch(
+    url.toString(),
+    { headers: getHeaders(), cache: 'no-store' },
+    {
+      endpoint: 'searchProducts',
+      cacheStrategy: 'no_cache',
+      params: {
+        search: params.search,
+        category: params.category,
+        page: params.page,
+        limit: params.limit,
+      },
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`Failed to search products: ${response.statusText}`)
+  }
+
+  const json = await response.json()
+
+  const products: Product[] = json?.data ?? json?.products ?? (Array.isArray(json) ? json : [])
+  const pagination = json?.meta?.pagination
+
+  return {
+    products,
+    total: pagination?.total ?? products.length,
+    page: pagination?.page ?? 1,
+    limit: pagination?.limit ?? products.length,
+    totalPages: pagination?.totalPages ?? 1,
+  }
+}
+
 export async function fetchProduct(idOrSlug: string): Promise<Product | null> {
+  'use cache'
+  cacheLife('hours')
+  cacheTag('products', `product-${idOrSlug}`)
+
   const response = await instrumentedFetch(
     `${API_BASE_URL}/products/${idOrSlug}`,
     { headers: getHeaders() },
@@ -310,6 +373,10 @@ export async function fetchPromotion(): Promise<Promotion | null> {
 // ─── Categories ─────────────────────────────────────────────
 
 export async function fetchCategories(): Promise<Category[]> {
+  'use cache'
+  cacheLife('days')
+  cacheTag('categories')
+
   const response = await instrumentedFetch(
     `${API_BASE_URL}/categories`,
     { headers: getHeaders() },
@@ -332,6 +399,10 @@ export async function fetchCategories(): Promise<Category[]> {
 // ─── Store Config ───────────────────────────────────────────
 
 export async function fetchStoreConfig(): Promise<StoreConfig> {
+  'use cache'
+  cacheLife('max')
+  cacheTag('store-config')
+
   const response = await instrumentedFetch(
     `${API_BASE_URL}/store/config`,
     { headers: getHeaders() },

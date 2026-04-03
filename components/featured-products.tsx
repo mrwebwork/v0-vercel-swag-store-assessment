@@ -31,6 +31,9 @@ async function getFeaturedProducts(): Promise<Product[]> {
 
 // Server component that renders the grid (not cached itself)
 export default async function FeaturedProducts() {
+  // Signal dynamic rendering FIRST - before any fetches that use the logger (which calls new Date())
+  await connection()
+
   const products = await getFeaturedProducts()
 
   if (!products || products.length === 0) {
@@ -41,9 +44,6 @@ export default async function FeaturedProducts() {
     )
   }
 
-  // Signal dynamic rendering before accessing request-time APIs (new Date() in logger)
-  await connection()
-  
   // Batch fetch stock for all products (dynamic, not cached)
   const productIds = products.map(p => p.id)
   const stockMap = productIds.length > 0 ? await fetchProductsStock(productIds) : new Map()

@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTransition } from 'react'
 import type { Category } from '@/types'
+import { Loader2 } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -34,28 +35,33 @@ export default function CategoryFilter({ categories, defaultValue }: CategoryFil
   }
 
   return (
-    <Select
-      value={defaultValue || 'all'}
-      onValueChange={handleChange}
-      disabled={isPending}
-    >
-      <SelectTrigger className="data-[size=default]:h-11 w-full border-zinc-800 bg-zinc-900 text-white sm:w-[200px] [&>span]:text-left">
-        <SelectValue placeholder="All Categories" />
-      </SelectTrigger>
-      <SelectContent className="border-zinc-800 bg-zinc-900">
-        <SelectItem value="all" className="text-white focus:bg-zinc-800 focus:text-white">
-          All Categories
-        </SelectItem>
-        {categories.map((category) => (
-          <SelectItem
-            key={category.slug}
-            value={category.slug}
-            className="text-white focus:bg-zinc-800 focus:text-white"
-          >
-            {category.name} ({category.productCount})
+    <div className="relative flex items-center">
+      <Select
+        value={defaultValue || 'all'}
+        onValueChange={handleChange}
+        disabled={isPending}
+      >
+        <SelectTrigger className="data-[size=default]:h-11 w-full border-zinc-800 bg-zinc-900 text-white sm:w-[200px] [&>span]:text-left">
+          <SelectValue placeholder="All Categories" />
+        </SelectTrigger>
+        <SelectContent className="border-zinc-800 bg-zinc-900">
+          <SelectItem value="all" className="text-white focus:bg-zinc-800 focus:text-white">
+            All Categories
           </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+          {categories.map((category) => (
+            <SelectItem
+              key={category.slug}
+              value={category.slug}
+              className="text-white focus:bg-zinc-800 focus:text-white"
+            >
+              {category.name} ({category.productCount})
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {isPending && (
+        <Loader2 className="ml-2 h-4 w-4 animate-spin text-zinc-400" />
+      )}
+    </div>
   )
 }
