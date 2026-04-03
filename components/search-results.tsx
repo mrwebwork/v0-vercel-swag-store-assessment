@@ -1,11 +1,10 @@
 import { cacheLife, cacheTag } from 'next/cache'
-import { connection } from 'next/server'
 import Link from 'next/link'
-import { fetchProducts, fetchProductsSearch, fetchProductsStock } from '@/lib/api'
+import { fetchProducts, fetchProductsSearch } from '@/lib/api'
 import { ProductCardServer } from '@/components/product-card-server'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import type { Product, Stock, Category } from '@/types'
+import type { Product, Category } from '@/types'
 
 const MAX_ITEMS_PER_PAGE = 100
 const DEFAULT_ITEMS_PER_PAGE = 12
@@ -96,14 +95,8 @@ export async function SearchResults({ q, category, page, featured, categories }:
   const totalProducts = productResult.total
   const totalPages = productResult.totalPages
 
-  // Signal dynamic rendering before fetching stock (uses new Date() in logger)
-  await connection()
-
-  // Batch stock fetch server-side
-  const productIds = products.map(p => p.id)
-  const stockMap: Map<string, Stock> = productIds.length > 0
-    ? await fetchProductsStock(productIds)
-    : new Map()
+  // NOTE: Stock is NOT fetched here - cards fetch it client-side progressively
+  // This allows products to render instantly from cache while stock streams in
 
   // Build pagination URL helper
   function buildPageUrl(pageNum: number) {
@@ -171,25 +164,17 @@ export async function SearchResults({ q, category, page, featured, categories }:
         </div>
       )}
 
-      {/* Product Grid */}
+      {/* Product Grid - renders instantly, stock loads progressively per card */}
       {products.length > 0 && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3 xl:grid-cols-4">
-          {products.map((product, index) => {
-            const stock = stockMap.get(product.id) ?? {
-              productId: product.id,
-              stock: 0,
-              inStock: false,
-              lowStock: false,
-            }
-            return (
-              <ProductCardServer
-                key={product.id}
-                product={product}
-                stock={stock}
-                isPriority={index < 4}
-              />
-            )
-          })}
+          {products.map((product, index) => (
+            <ProductCardServer
+              key={product.id}
+              product={product}
+              isPriority={index < 4}
+              // No stock prop = card fetches stock client-side
+            />
+          ))}
         </div>
       )}
 

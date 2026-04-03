@@ -4,6 +4,11 @@ import PromoBanner from '@/components/promo-banner'
 import PromoBannerSkeleton from '@/components/promo-banner-skeleton'
 import FeaturedProducts from '@/components/featured-products'
 import FeaturedProductsSkeleton from '@/components/featured-products-skeleton'
+import { fetchCategories } from '@/lib/api'
+
+// Warm the categories cache on homepage load (non-blocking)
+// When user navigates to /search, categories resolve instantly from cache
+void fetchCategories()
 
 export const metadata = {
   description: 'Shop the official Vercel Swag Store for premium developer apparel and accessories.',
