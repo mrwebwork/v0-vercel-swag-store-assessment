@@ -50,7 +50,7 @@ type CartContextValue = {
   itemCount: number
   isLoading: boolean
   isPending: boolean
-  addItem: (productId: string, quantity: number) => Promise<AddToCartResult>
+  addItem: (productId: string, quantity: number) => AddToCartResult
   updateItem: (itemId: string, quantity: number) => Promise<void>
   removeItem: (itemId: string) => Promise<void>
 }
@@ -129,10 +129,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const addItem = useCallback(
-    async (productId: string, quantity: number): Promise<AddToCartResult> => {
-      // Create unique key for this request
-      const requestKey = `${productId}-${Date.now()}`
-      
+    (productId: string, quantity: number): AddToCartResult => {
       // Check if there's already a pending request for this product
       if (pendingRequests.current.has(productId)) {
         return { success: false, error: 'Request already in progress' }
@@ -141,36 +138,32 @@ export function CartProvider({ children }: { children: ReactNode }) {
       // Mark request as pending
       pendingRequests.current.add(productId)
       
-      return new Promise((resolve) => {
-        startTransition(async () => {
-          addOptimisticAction({ type: 'add', productId, quantity })
-          try {
-            const updatedCart = await addToCartAction(productId, quantity)
-            setCart(updatedCart)
-            pendingRequests.current.delete(productId)
-            resolve({ success: true })
-          } catch (error) {
-            pendingRequests.current.delete(productId)
-            
-            if (isStaleServerActionError(error)) {
-              handleStaleDeployment()
-              resolve({ success: false, error: 'Session expired. Refreshing...' })
-              return
-            }
-            
-            // Revert optimistic update by refetching
-            try {
-              const serverCart = await getCartAction()
-              setCart(serverCart)
-            } catch {
-              // If refetch also fails, keep current state
-            }
-            
-            const errorMessage = error instanceof Error ? error.message : 'Failed to add item'
-            resolve({ success: false, error: errorMessage })
+      // Fire the transition (non-blocking) - optimistic update + server action
+      startTransition(async () => {
+        addOptimisticAction({ type: 'add', productId, quantity })
+        try {
+          const updatedCart = await addToCartAction(productId, quantity)
+          setCart(updatedCart)
+        } catch (error) {
+          if (isStaleServerActionError(error)) {
+            handleStaleDeployment()
+            return
           }
-        })
+          
+          // Revert optimistic update by refetching
+          try {
+            const serverCart = await getCartAction()
+            setCart(serverCart)
+          } catch {
+            // If refetch also fails, keep current state
+          }
+        } finally {
+          pendingRequests.current.delete(productId)
+        }
       })
+      
+      // Return immediately - don't wait for server response
+      return { success: true }
     },
     [addOptimisticAction]
   )
